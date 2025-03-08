@@ -1,0 +1,1392 @@
+[
+    {
+        "patient_id": "366",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "246",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "408",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "273",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "242",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "203",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "270",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "393",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "418",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "410",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "277",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "330",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "365",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "260",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "425",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "326",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "181",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "415",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "424",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "274",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "384",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "269",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "282",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "287",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "192",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "259",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "266",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "371",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "356",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "343",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "345",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "322",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "245",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "328",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "179",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "402",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "202",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "261",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "346",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "271",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "284",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "381",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "316",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "338",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "241",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "240",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "213",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "278",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "348",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "373",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "210",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "409",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "344",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "318",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "257",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "376",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "397",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "180",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "285",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "256",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "401",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "387",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "320",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "312",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "355",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "390",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "398",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "369",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "374",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "204",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "411",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "389",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "350",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "258",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "255",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "407",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "280",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "268",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "342",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "412",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "283",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "263",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "386",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "209",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "368",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "264",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "319",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "422",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "394",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "378",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "275",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "363",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "286",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "413",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "337",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "361",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "281",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "267",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "400",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "385",
+        "label": "malignant",
+        "binary_label": 1
+    },
+    {
+        "patient_id": "060",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "016",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "127",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "147",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "038",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "098",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "010",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "159",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "065",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "156",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "047",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "044",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "244",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "046",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "184",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "200",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "069",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "235",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "208",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "110",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "041",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "173",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "189",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "035",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "236",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "001",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "042",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "141",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "070",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "066",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "032",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "172",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "168",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "112",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "040",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "005",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "085",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "049",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "026",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "094",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "146",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "088",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "061",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "154",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "150",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "092",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "218",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "057",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "131",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "104",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "237",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "239",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "113",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "064",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "211",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "135",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "171",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "024",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "153",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "125",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "089",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "034",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "130",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "136",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "036",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "226",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "196",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "166",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "177",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "152",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "107",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "091",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "023",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "212",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "009",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "021",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "018",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "219",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "129",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "055",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "217",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "176",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "059",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "174",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "216",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "224",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "272",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "126",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "004",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "160",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "109",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "161",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "093",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "222",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "234",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "002",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "096",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "143",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "095",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "007",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "048",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "012",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "206",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "145",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "087",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "276",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "037",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "043",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "019",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "201",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "169",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "115",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "114",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "163",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "020",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "197",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "116",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "052",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "097",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "008",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "006",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "022",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "045",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "011",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "194",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "188",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "190",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "148",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "199",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "193",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "221",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "058",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "099",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "072",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "144",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "028",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "220",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "137",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "050",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "121",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "003",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "158",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "013",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "233",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "030",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "165",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "182",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "062",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "191",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "132",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "071",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "017",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "086",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "015",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "106",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "108",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "068",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "149",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "073",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "067",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "170",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "183",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "100",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "090",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "243",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "238",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "105",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "075",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "051",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "111",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "185",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "162",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "080",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "031",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "151",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "225",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "195",
+        "label": "benign",
+        "binary_label": 0
+    },
+    {
+        "patient_id": "164",
+        "label": "benign",
+        "binary_label": 0
+    }
+]

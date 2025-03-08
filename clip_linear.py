@@ -12,12 +12,12 @@ class ClipLinearProbing(nn.Module):
         for param in self.clip_model.parameters():
             param.requires_grad = False
         # Assume CLIP text encoder outputs 512-dim embeddings (adjust if different)
-        self.linear = nn.Linear(512, 1)  # Single output logit for binary classification
+        self.linear = nn.Linear(512, 1).to(self.device)  # Single output logit for binary classification
 
     def forward(self, prompts: list):
         # Tokenize the input prompts
-        tokens = clip.tokenize(prompts).to(self.device)
+        tokens = clip.tokenize(prompts, truncate=True).to(self.device)
         with torch.no_grad():
             text_embeddings = self.clip_model.encode_text(tokens)
-        logits = self.linear(text_embeddings)
+        logits = self.linear(text_embeddings.float())
         return logits
