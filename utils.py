@@ -105,3 +105,46 @@ def convert_json_to_sentence(data):
         sentence_parts.append(" No mention is made of " + ", ".join(missing_protocol) + ".")
     
     return "".join(sentence_parts)
+
+def generate_category_prompts(data):
+    # Extract sections
+    demographic = data.get("demographic", {})
+    personal_history = data.get("personal_history", {})
+    clinical_history = data.get("clinical_history", {})
+    protocol = data.get("protocol", {})
+    
+    # Risk factors prompt
+    risk_factors_parts = []
+    risk_factors_parts.append(f"Age: {demographic.get('age', 'unknown')}")
+    risk_factors_parts.append(f"Eating habits: {personal_history.get('eating habits', 'not specified')}")
+    risk_factors_parts.append(f"Family history of cancer: {personal_history.get('family history', 'not specified')}")
+    risk_factors_parts.append(f"Radiotherapy treatment: {clinical_history.get('radiotherapy', 'not specified')}")
+    risk_factors_parts.append(f"Hormone replacement: {clinical_history.get('use of hormone replacement', 'not specified')}")
+    risk_factors_parts.append(f"Age at menarche: {personal_history.get('menarche', 'not specified')}")
+    risk_factors_parts.append(f"Age at menopause: {personal_history.get('menopause', 'not specified')}")
+    risk_factors_parts.append(f"Diabetes history: {personal_history.get('diabetes', 'not specified')}")
+    risk_factors_parts.append(f"Presence of nodules: {personal_history.get('nodules', 'not specified')}")
+    risk_factors_prompt = "Risk factors: " + "; ".join(risk_factors_parts) + "."
+    
+    # Complementary features prompt
+    comp_parts = []
+    comp_parts.append(f"Prosthesis: {clinical_history.get('prosthesis', 'not specified')}")
+    comp_parts.append(f"Signals of wart on breasts: {clinical_history.get('is there signal of wart on breast', 'not specified')}")
+    comp_parts.append(f"Nipple changes: {clinical_history.get('nipple changes', 'not specified')}")
+    comp_parts.append(f"Mastectomy: {clinical_history.get('mastectomy', 'not specified')}")
+    comp_prompt = "Complementary features: " + "; ".join(comp_parts) + "."
+    
+    # Protocol features prompt
+    prot_parts = []
+    prot_parts.append(f"Smoked: {protocol.get('smoked', 'not specified')}")
+    prot_parts.append(f"Drank coffee: {protocol.get('drank coffee', 'not specified')}")
+    prot_parts.append(f"Consumed alcohol: {protocol.get('consumed alcohol', 'not specified')}")
+    prot_parts.append(f"Physical exercise: {protocol.get('physical exercise', 'not specified')}")
+    prot_parts.append(f"Use of deodorant/products: {protocol.get('deodorant or products at breasts or armpits region', 'not specified')}")
+    prot_prompt = "Protocol features: " + "; ".join(prot_parts) + "."
+    
+    return {
+        "risk_factors": risk_factors_prompt,
+        "complementary_features": comp_prompt,
+        "protocol_features": prot_prompt
+    }
