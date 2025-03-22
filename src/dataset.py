@@ -1,7 +1,7 @@
 import os
 import json
 from torch.utils.data import Dataset
-from utils import convert_json_to_sentence, generate_category_prompts
+from src.utils import convert_json_to_sentence, generate_category_prompts
 
 class PromptDataset(Dataset):
     def __init__(self, folder_path, labels_path, transform=None):
@@ -32,10 +32,9 @@ class PromptDataset(Dataset):
 
 # New dataset class for multiple category prompts per patient
 class MultiPromptDataset(Dataset):
-    def __init__(self, folder_path, labels_path, transform=None):
+    def __init__(self, folder_path, labels_path):
         # List JSON files in the folder
         self.json_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith(".json")]
-        self.transform = transform
         # Load patient labels and create a mapping patient_id -> binary_label
         with open(labels_path, 'r') as f:
             labels = json.load(f)
@@ -53,6 +52,4 @@ class MultiPromptDataset(Dataset):
         patient_id = str(int(float(data["id_paciente"])))
         label = self.labels_dict.get(patient_id, None)
         sample = {"prompts": prompts, "label": label}
-        if self.transform:
-            sample = self.transform(sample)
         return sample
