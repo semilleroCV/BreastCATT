@@ -90,7 +90,7 @@ def convert_json_to_sentence(data, include_demographic=True, include_personal_hi
     if include_protocol:
         protocol_phrases = []
         if body_temperature:
-            protocol_phrases.append(f"a body temperature of {body_temperature}°C")
+            protocol_phrases.append(f"a body temperature of {body_temperature} degrees Celsius")
         if consumed_alcohol:
             protocol_phrases.append(f"alcohol consumption was {consumed_alcohol}")
         if drank_coffee:
