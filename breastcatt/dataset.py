@@ -1,8 +1,8 @@
 import os
 import json
 from torch.utils.data import Dataset
-from src.single_prompt import convert_json_to_sentence
-from src.category_prompt import generate_category_prompts
+from breastcatt.single_prompt import convert_json_to_sentence
+from breastcatt.category_prompt import generate_category_prompts
 
 class PromptDataset(Dataset):
     def __init__(self, folder_path, labels_path, 
