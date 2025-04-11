@@ -30,3 +30,4 @@ __pycache__/
 checkpoints
 transformers/
 thermal_parser/
+runs
