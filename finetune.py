@@ -628,7 +628,8 @@ def main():
             accelerator.save_state(output_dir)
 
     if args.with_tracking:
-        wandb.run.name = args.output_dir
+        if args.report_to == "wandb":
+            wandb.run.name = args.output_dir
         accelerator.end_training()
 
     if args.output_dir is not None:
