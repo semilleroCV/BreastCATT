@@ -1,0 +1,7 @@
+albumentations >= 1.4.16
+torchmetrics
+datasets
+git+https://github.com/huggingface/accelerate
+timm
+wandb
+git+https://github.com/huggingface/transformers.git
