@@ -67,9 +67,9 @@ def convert_json_to_sentence(data):
     elif menarche:
         sentence_parts.append(f" Menarche occurred {menarche}.")
     
-    # Indicate missing signs and symptoms if applicable (DA 85.71%, 1% más que sino se le pasa)
-    if not signs and not symptoms:
-        sentence_parts.append(" No relevant clinical symptoms were reported.")
+    # # Indicate missing signs and symptoms if applicable (DA 85.71%, 1% más que sino se le pasa)
+    # if not signs and not symptoms:
+    #     sentence_parts.append(" No relevant clinical symptoms were reported.")
     
     # Clinical history: list items with no information
     missing_clinical = []
@@ -101,8 +101,8 @@ def convert_json_to_sentence(data):
         missing_protocol.append("smoking")
     if not physical_exercise:
         missing_protocol.append("recent physical exercise")
-    if missing_protocol: # Agregando esto Y "No relevant clinical symptoms were reported." da más de 90% en algunos casos
-        sentence_parts.append(" No mention of " + ", ".join(missing_protocol) + ".")
+    # if missing_protocol: # Agregando esto Y "No relevant clinical symptoms were reported." da más de 90% en algunos casos
+    #     sentence_parts.append(" No mention of " + ", ".join(missing_protocol) + ".")
     
     return "".join(sentence_parts)
 
