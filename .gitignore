@@ -26,5 +26,7 @@ __pycache__/
 # Mac OS-specific storage files
 .DS_Store
 
-/data/
+/data/*/
 checkpoints
+transformers/
+thermal_parser/
