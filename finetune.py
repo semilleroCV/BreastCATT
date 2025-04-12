@@ -478,7 +478,8 @@ def main():
         accelerator.init_trackers(args.wandb_project, experiment_config)
 
     # Get the metric function
-    metric = evaluate.load("accuracy")
+    metric_list = evaluate.combine(["accuracy", "precision"])
+
 
     # Train!
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -586,18 +587,20 @@ def main():
                 outputs = model(**batch)
             predictions = outputs.logits.argmax(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
-            metric.add_batch(
-                predictions=predictions,
-                references=references,
-            )
-
-        eval_metric = metric.compute()
+            # add bath to each metric and evaluate separtely
+            for metric in metric_list:
+                metric.add_batch(
+                    predictions=predictions,
+                    references=references,
+                )
+                eval_metric = metric.compute()
         logger.info(f"epoch {epoch}: {eval_metric}")
 
         if args.with_tracking:
             accelerator.log(
                 {
-                    "accuracy": eval_metric,
+                    "accuracy": eval_metric['accuracy'],
+                    "precision": eval_metric['precision'],
                     "train_loss": total_loss.item() / len(train_dataloader),
                     "epoch": epoch,
                     "step": completed_steps,
