@@ -31,6 +31,7 @@ from accelerate.utils import set_seed
 from datasets import load_dataset
 from huggingface_hub import HfApi
 from torch.utils.data import DataLoader
+from torchmetrics.classification import BinarySpecificity
 from torchvision.transforms import (
     CenterCrop,
     Compose,
@@ -477,8 +478,9 @@ def main():
         experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"].value
         accelerator.init_trackers(args.wandb_project, experiment_config)
 
-    # Get the metric function
-    metric = evaluate.load("accuracy")
+    # Get the metric function using evaluate and create a torchmetrics specificity calculator
+    metric_list = evaluate.combine(["accuracy", "recall", "precision"])
+    specificity_metric = BinarySpecificity().to(accelerator.device)
 
     # Train!
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -581,23 +583,30 @@ def main():
                 break
 
         model.eval()
+        # Reset specificity metric
+        specificity_metric.reset()
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
             predictions = outputs.logits.argmax(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
-            metric.add_batch(
+            metric_list.add_batch(
                 predictions=predictions,
                 references=references,
             )
-
-        eval_metric = metric.compute()
-        logger.info(f"epoch {epoch}: {eval_metric}")
+            specificity_metric.update(predictions, references)
+        eval_metric = metric_list.compute()
+        # Calculate specificity and use recall as sensitivity
+        score_specificity = specificity_metric.compute()
+        logger.info(f"epoch {epoch}: {eval_metric}, specificity: {score_specificity}")
 
         if args.with_tracking:
             accelerator.log(
                 {
-                    "accuracy": eval_metric,
+                    "specificity": score_specificity,
+                    "accuracy": eval_metric['accuracy'],
+                    "precision": eval_metric['precision'],
+                    "sensitivity": eval_metric['recall'],
                     "train_loss": total_loss.item() / len(train_dataloader),
                     "epoch": epoch,
                     "step": completed_steps,
@@ -649,6 +658,7 @@ def main():
                     token=args.hub_token,
                 )
             all_results = {f"eval_{k}": v for k, v in eval_metric.items()}
+            all_results["eval_specificity"] = score_specificity.item()
             with open(os.path.join(args.output_dir, "all_results.json"), "w") as f:
                 json.dump(all_results, f)
 
