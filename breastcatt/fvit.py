@@ -13,9 +13,21 @@ import timm.models.vision_transformer
 
 import torch.nn as nn
 import torch
-
+from transformers import AutoModel, AutoTokenizer, AutoConfig
 from typing import Optional
 
+class LanguageModel(nn.Module):
+    def __init__(self, name):
+        super().__init__()
+        self.tokenizer= AutoTokenizer.from_pretrained(name)
+        self.config=AutoConfig.from_pretrained(name)
+        self.model_lm=AutoModel.from_pretrained(name)
+    def forward(self, x):
+        inputs = self.tokenizer(x, return_tensors="pt", padding=True).to(self.model_lm.device)
+        outputs = self.model_lm(**inputs)
+        # Assume model returns a 'pooler_output' attribute containing the embeddings
+        embedding = outputs.pooler_output
+        return embedding.unsqueeze(1)  # Add a dimension for the batch size
 
 class MultiModalBlock(nn.Module):
     def __init__(self, embed_dim, num_heads, mlp_ratio, cross_attn=False, cross_num_heads=8, norm_layer=nn.LayerNorm, fusion_alpha=1.0):
@@ -60,6 +72,8 @@ class MultiModalVisionTransformer(nn.Module):
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim), requires_grad=False)  # fixed sin-cos embedding
 
         self.pos_drop = nn.Dropout(p=pos_drop_rate)
+        # Extracts embedding from language model
+        self.language_model = LanguageModel(name='UFNLP/gatortron-base')
 
         # Replace original transformer blocks with MultiModalBlocks.
         self.blocks = nn.ModuleList([
@@ -85,6 +99,12 @@ class MultiModalVisionTransformer(nn.Module):
         self.head_drop = nn.Dropout(drop_rate)
         self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
+    def forward_language_model(self, x):
+        # x: (B, L) where L is the length of the text input
+        # Get the text embedding from the language model
+        text_embedding = self.language_model(x)
+        return text_embedding
+
     def forward_features(self, x, text_embedding=None):
         B = x.shape[0]
         x = self.patch_embed(x)
@@ -102,8 +122,10 @@ class MultiModalVisionTransformer(nn.Module):
             outcome = x[:, 0]
         return outcome
 
-    def forward(self, x, text_embedding=None):
-        features = self.forward_features(x, text_embedding)
+    def forward(self, pixel_values, texts=None, labels=None):
+        if texts is not None and isinstance(texts, list):
+            text_embedding = self.forward_language_model(texts)
+        features = self.forward_features(pixel_values, text_embedding)
         x = self.head(features)
         return x
 
