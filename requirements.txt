@@ -1,5 +1,6 @@
 albumentations >= 1.4.16
 torchmetrics
+evaluate
 datasets
 git+https://github.com/huggingface/accelerate
 timm
