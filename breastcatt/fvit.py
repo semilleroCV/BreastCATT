@@ -151,9 +151,10 @@ class MultiModalVisionTransformer(nn.Module):
     def forward(self, pixel_values, texts=None, labels=None):
         return self.forward_loss(pixel_values, texts, labels)
 
-    def save_pretrained(self, save_directory):
+    def save_pretrained(self, save_directory, **kwargs):
         """
         Save the model weights and configuration to the specified directory in Hugging Face style.
+        Extra keyword arguments are ignored for compatibility.
         """
         os.makedirs(save_directory, exist_ok=True)
         # Save model weights
