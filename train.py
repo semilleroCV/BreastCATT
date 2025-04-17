@@ -574,7 +574,7 @@ def main():
                             save_function=accelerator.save,
                         )
                         if accelerator.is_main_process:
-                            image_processor.save_pretrained(args.output_dir)
+                            # image_processor.save_pretrained(args.output_dir)
                             api.upload_folder(
                                 commit_message=f"Training in progress epoch {epoch}",
                                 folder_path=args.output_dir,
@@ -627,7 +627,7 @@ def main():
                 args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
             )
             if accelerator.is_main_process:
-                image_processor.save_pretrained(args.output_dir)
+                # image_processor.save_pretrained(args.output_dir)
                 api.upload_folder(
                     commit_message=f"Training in progress epoch {epoch}",
                     folder_path=args.output_dir,
@@ -654,7 +654,7 @@ def main():
             args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
         )
         if accelerator.is_main_process:
-            image_processor.save_pretrained(args.output_dir)
+            # image_processor.save_pretrained(args.output_dir)
             if args.push_to_hub:
                 api.upload_folder(
                     commit_message="End of training",
