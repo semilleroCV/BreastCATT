@@ -15,6 +15,12 @@ import torch.nn as nn
 import torch
 from transformers import AutoModel, AutoTokenizer, AutoConfig
 from typing import Optional
+from dataclasses import dataclass
+
+@dataclass
+class ModelOutput:
+    logits: torch.Tensor
+    loss: Optional[torch.Tensor] = None
 
 class LanguageModel(nn.Module):
     def __init__(self, name):
@@ -98,6 +104,7 @@ class MultiModalVisionTransformer(nn.Module):
         self.fc_norm = kwargs.get('norm_layer', nn.LayerNorm)(embed_dim) if final_norm and use_fc_norm else nn.Identity()
         self.head_drop = nn.Dropout(drop_rate)
         self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        self.num_classes = num_classes
 
     def forward_language_model(self, x):
         # x: (B, L) where L is the length of the text input
@@ -122,12 +129,25 @@ class MultiModalVisionTransformer(nn.Module):
             outcome = x[:, 0]
         return outcome
 
-    def forward(self, pixel_values, texts=None, labels=None):
+    def forward_loss(self, pixel_values, texts=None, labels=None):
         if texts is not None and isinstance(texts, list):
             text_embedding = self.forward_language_model(texts)
+        else:
+            text_embedding = None
         features = self.forward_features(pixel_values, text_embedding)
-        x = self.head(features)
-        return x
+        logits = self.head(features)
+        loss = None
+        if labels is not None:
+            if self.num_classes == 1:
+                loss_fn = nn.BCEWithLogitsLoss()
+                loss = loss_fn(logits, labels.unsqueeze(1).float())
+            else:
+                loss_fn = nn.CrossEntropyLoss()
+                loss = loss_fn(logits, labels)
+        return ModelOutput(logits=logits, loss=loss)
+
+    def forward(self, pixel_values, texts=None, labels=None):
+        return self.forward_loss(pixel_values, texts, labels)
 
 
 # Factory function for multi-modal Vision Transformer (base version).

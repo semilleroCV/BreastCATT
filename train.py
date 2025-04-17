@@ -545,10 +545,7 @@ def main():
         for step, batch in enumerate(active_dataloader):
             with accelerator.accumulate(model):
                 outputs = model(**batch)
-                labels = batch["labels"]
-                loss_fn = nn.BCEWithLogitsLoss()
-                loss = loss_fn(outputs, labels.unsqueeze(1).float())
-                # loss = outputs.loss
+                loss = outputs.loss
                 # We keep track of the loss at each epoch
                 if args.with_tracking:
                     total_loss += loss.detach().float()
@@ -596,8 +593,8 @@ def main():
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
-            # predictions = outputs.logits.argmax(dim=-1)
-            scores = torch.sigmoid(outputs) 
+            logits = outputs.logits
+            scores = torch.sigmoid(logits)
             predictions = (scores >= 0.5).long().squeeze(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
             metric_list.add_batch(
