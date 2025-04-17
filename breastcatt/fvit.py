@@ -16,6 +16,8 @@ import torch
 from transformers import AutoModel, AutoTokenizer, AutoConfig
 from typing import Optional
 from dataclasses import dataclass
+import os
+import json
 
 @dataclass
 class ModelOutput:
@@ -148,6 +150,42 @@ class MultiModalVisionTransformer(nn.Module):
 
     def forward(self, pixel_values, texts=None, labels=None):
         return self.forward_loss(pixel_values, texts, labels)
+
+    def save_pretrained(self, save_directory):
+        """
+        Save the model weights and configuration to the specified directory in Hugging Face style.
+        """
+        os.makedirs(save_directory, exist_ok=True)
+        # Save model weights
+        torch.save(self.state_dict(), os.path.join(save_directory, "pytorch_model.bin"))
+        # Save config
+        config = {
+            "embed_dim": self.patch_embed.proj.out_channels,
+            "use_cross_attn": hasattr(self.blocks[0], 'use_cross_attn') and self.blocks[0].use_cross_attn,
+            "num_heads": self.blocks[0].block.attn.num_heads,
+            "in_chans": self.patch_embed.proj.in_channels,
+            "num_classes": self.num_classes,
+            "cross_num_heads": getattr(self.blocks[0], 'cross_attn', None) and self.blocks[0].cross_attn.num_heads or 0,
+            "fusion_alpha": getattr(self.blocks[0], 'fusion_alpha', 1.0),
+            "global_pool": self.global_pool,
+            "depth": len(self.blocks),
+            # Add more config parameters as needed
+        }
+        with open(os.path.join(save_directory, "config.json"), "w") as f:
+            json.dump(config, f)
+
+    @classmethod
+    def from_pretrained(cls, load_directory, **kwargs):
+        """
+        Load the model weights and configuration from the specified directory in Hugging Face style.
+        """
+        with open(os.path.join(load_directory, "config.json"), "r") as f:
+            config = json.load(f)
+        config.update(kwargs)
+        model = cls(**config)
+        state_dict = torch.load(os.path.join(load_directory, "pytorch_model.bin"), map_location="cpu")
+        model.load_state_dict(state_dict)
+        return model
 
 
 # Factory function for multi-modal Vision Transformer (base version).

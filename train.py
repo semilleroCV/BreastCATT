@@ -21,7 +21,6 @@ import math
 import os
 from pathlib import Path
 import wandb
-from torch import nn
 
 import datasets
 import evaluate
