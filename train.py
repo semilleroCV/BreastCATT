@@ -602,9 +602,9 @@ def main():
             scores = torch.sigmoid(logits)
             predictions = (scores >= 0.5).long().squeeze(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
-            accuracy.add_batch(predictions=predictions, references=labels)
-            precision.add_batch(predictions=predictions, references=labels)
-            recall.add_batch(predictions=predictions, references=labels)
+            accuracy.add_batch(predictions=predictions, references=references)
+            precision.add_batch(predictions=predictions, references=references)
+            recall.add_batch(predictions=predictions, references=references)
             # metric_list.add_batch(
             #     predictions=predictions,
             #     references=references,
