@@ -96,12 +96,6 @@ def parse_args():
         help="Percent to split off of train for validation",
     )
     parser.add_argument(
-        "--model_name_or_path",
-        type=str,
-        help="Path to pretrained model or model identifier from huggingface.co/models.",
-        default="fvit",
-    )
-    parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
         default=8,
@@ -189,7 +183,7 @@ def parse_args():
     parser.add_argument(
         "--wandb_project",
         type=str,
-        default="breast-cancer",
+        default="colcaci",
         help=(
             'The name of the project to which the logs will be uploaded on Weights & Biases. Only applicable'
             ' when `--report_to wandb` is passed.'
@@ -211,6 +205,23 @@ def parse_args():
         type=str,
         default="label",
         help="The name of the dataset column containing the labels. Defaults to 'label'.",
+    )
+    parser.add_argument(
+        "--use_cross_attn",
+        action="store_true",
+        help="Whether to use cross-attention in the model.",
+    )
+    parser.add_argument(
+        "--use_segmentation",
+        action="store_true",
+        help="Whether to use segmentation in the model.",
+    )
+    parser.add_argument(
+        "--vit_version",
+        type=str,
+        default="base",
+        choices=["small", "base", "large", "huge"],
+        help="Which ViT model version to use: small, base, large, or huge.",
     )
     args = parser.parse_args()
 
@@ -338,9 +349,36 @@ def main():
     #
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
-    if args.model_name_or_path == "fvit":
-        model = fvit.multimodal_vit_base_patch16(num_classes=1)
+    if args.vit_version == "small":
+        model = fvit.multimodal_vit_small_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1
+        )
         size = 224
+    elif args.vit_version == "base":
+        model = fvit.multimodal_vit_base_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1
+        )
+        size = 224
+    elif args.vit_version == "large":
+        model = fvit.multimodal_vit_large_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1
+        )
+        size = 224
+    elif args.vit_version == "huge":
+        model = fvit.multimodal_vit_huge_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1
+        )
+        size = 224
+    else:
+        raise ValueError(f"Unknown vit_version: {args.vit_version}")
         
     train_transforms = Compose(
         [
