@@ -95,7 +95,7 @@ class MultiModalVisionTransformer(nn.Module):
         self.use_segmentation = use_segmentation
         self.segmentation_model = SegmentationModel(
             img_size=224, n_skip=3, num_classes=1,
-            dir_model='../checkpoints/segmentation/lucky-sweep-6_0.4937.pth',
+            dir_model='checkpoints/segmentation/lucky-sweep-6_0.4937.pth',
             device=torch.device('cpu')
         ) if use_segmentation else None
 
