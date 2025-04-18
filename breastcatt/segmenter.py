@@ -32,7 +32,7 @@ class SegmentationModel(nn.Module):
 
         # Load model weights from file, mapping to the specified device
         try:
-            self.model.load_state_dict(torch.load(dir_model, map_location=device))
+            self.model.load_state_dict(torch.load(dir_model, map_location=device, weights_only=True))
         except Exception as e:
             print(f"Error loading weights from {dir_model}: {e}")
             raise
