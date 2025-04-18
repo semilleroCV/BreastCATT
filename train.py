@@ -383,7 +383,7 @@ def main():
     ])
     val_transforms = Compose(
         [
-            Resize(size),
+            Resize((224, 224)),
             ToTensor(),
             min_max_norm,
         ]
