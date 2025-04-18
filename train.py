@@ -488,7 +488,7 @@ def main():
 
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
     metric_list = evaluate.combine(["accuracy", "recall", "precision"])
-    specificity_metric = BinarySpecificity().to(accelerator.device)
+    specificity_metric = BinarySpecificity(zero_division=0).to(accelerator.device)
 
     # Train!
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -604,7 +604,7 @@ def main():
                 references=references,
             )
             specificity_metric.update(predictions, references)
-        eval_metric = metric_list.compute()
+        eval_metric = metric_list.compute(zero_division=0)
         # Calculate specificity and use recall as sensitivity
         score_specificity = specificity_metric.compute()
         logger.info(f"epoch {epoch}: {eval_metric}, specificity: {score_specificity}")
