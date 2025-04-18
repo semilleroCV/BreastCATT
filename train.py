@@ -45,7 +45,7 @@ from torchvision.transforms import (
 from tqdm.auto import tqdm
 from breastcatt import fvit
 import transformers
-from transformers import AutoConfig, AutoImageProcessor, AutoModelForImageClassification, SchedulerType, get_scheduler
+from transformers import SchedulerType, get_scheduler
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
@@ -341,38 +341,7 @@ def main():
     if args.model_name_or_path == "fvit":
         model = fvit.multimodal_vit_base_patch16(num_classes=1)
         size = 224
-    else:
-        config = AutoConfig.from_pretrained(
-            args.model_name_or_path,
-            num_labels=len(labels),
-            id2label=id2label,
-            label2id=label2id,
-            finetuning_task="image-classification",
-            trust_remote_code=args.trust_remote_code,
-        )
-        image_processor = AutoImageProcessor.from_pretrained(
-            args.model_name_or_path,
-            trust_remote_code=args.trust_remote_code,
-        )
-        model = AutoModelForImageClassification.from_pretrained(
-            args.model_name_or_path,
-            from_tf=bool(".ckpt" in args.model_name_or_path),
-            config=config,
-            ignore_mismatched_sizes=args.ignore_mismatched_sizes,
-            trust_remote_code=args.trust_remote_code,
-        )
-    # Preprocessing the datasets
-
-    # Define torchvision transforms to be applied to each image.
-    # if "shortest_edge" in image_processor.size:
-    #     size = image_processor.size["shortest_edge"]
-    # else:
-    #     size = (image_processor.size["height"], image_processor.size["width"])
-    # normalize = (
-    #     Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
-    #     if hasattr(image_processor, "image_mean") and hasattr(image_processor, "image_std")
-    #     else Lambda(lambda x: x)
-    # )
+        
     train_transforms = Compose(
         [
             RandomResizedCrop(size),
@@ -574,7 +543,6 @@ def main():
                             save_function=accelerator.save,
                         )
                         if accelerator.is_main_process:
-                            # image_processor.save_pretrained(args.output_dir)
                             api.upload_folder(
                                 commit_message=f"Training in progress epoch {epoch}",
                                 folder_path=args.output_dir,
@@ -627,7 +595,6 @@ def main():
                 args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
             )
             if accelerator.is_main_process:
-                # image_processor.save_pretrained(args.output_dir)
                 api.upload_folder(
                     commit_message=f"Training in progress epoch {epoch}",
                     folder_path=args.output_dir,
@@ -654,7 +621,6 @@ def main():
             args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
         )
         if accelerator.is_main_process:
-            # image_processor.save_pretrained(args.output_dir)
             if args.push_to_hub:
                 api.upload_folder(
                     commit_message="End of training",
