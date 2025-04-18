@@ -35,8 +35,6 @@ from torchmetrics.classification import BinarySpecificity
 from torchvision.transforms import (
     CenterCrop,
     Compose,
-    Lambda,
-    Normalize,
     RandomHorizontalFlip,
     RandomResizedCrop,
     Resize,
@@ -186,15 +184,6 @@ def parse_args():
         default="colcaci",
         help=(
             'The name of the project to which the logs will be uploaded on Weights & Biases. Only applicable'
-            ' when `--report_to wandb` is passed.'
-            ),
-    )
-    parser.add_argument(
-        "--wandb_entity",
-        type=str,
-        default=None,
-        help=(
-            'The name of the entity to which the logs will be uploaded on Weights & Biases. Only applicable'
             ' when `--report_to wandb` is passed.'
             ),
     )
@@ -496,7 +485,7 @@ def main():
         experiment_config = vars(args)
         # TensorBoard cannot log Enums, need the raw value
         experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"].value
-        accelerator.init_trackers(args.wandb_project, experiment_config, {"entity": args.wandb_entity})
+        accelerator.init_trackers(args.wandb_project, experiment_config)
 
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
     metric_list = evaluate.combine(["accuracy", "recall", "precision"])
