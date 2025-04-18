@@ -20,7 +20,6 @@ import logging
 import math
 import os
 from pathlib import Path
-import wandb
 
 import datasets
 import evaluate
@@ -643,7 +642,8 @@ def main():
             output_dir = f"epoch_{epoch}"
             if args.output_dir is not None:
                 output_dir = os.path.join(args.output_dir, output_dir)
-            accelerator.save_state(output_dir)
+            if accelerator.is_local_main_process:
+                accelerator.save_state(output_dir)
 
     if args.with_tracking:
         accelerator.end_training()
