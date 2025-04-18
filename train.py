@@ -496,7 +496,7 @@ def main():
         experiment_config = vars(args)
         # TensorBoard cannot log Enums, need the raw value
         experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"].value
-        accelerator.init_trackers(args.wandb_project, experiment_config, entity=args.wandb_entity)
+        accelerator.init_trackers(args.wandb_project, experiment_config, {"entity": args.wandb_entity})
 
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
     metric_list = evaluate.combine(["accuracy", "recall", "precision"])
