@@ -487,7 +487,10 @@ def main():
         accelerator.init_trackers(args.wandb_project, experiment_config)
 
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
-    metric_list = evaluate.combine(["accuracy", "recall", "precision"])
+    # metric_list = evaluate.combine(["accuracy", "recall", "precision"])
+    accuracy = evaluate.load("accuracy")
+    precision = evaluate.load("precision")
+    recall = evaluate.load("recall")
     specificity_metric = BinarySpecificity(zero_division=0).to(accelerator.device)
 
     # Train!
@@ -599,12 +602,19 @@ def main():
             scores = torch.sigmoid(logits)
             predictions = (scores >= 0.5).long().squeeze(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
-            metric_list.add_batch(
-                predictions=predictions,
-                references=references,
-            )
+            accuracy.add_batch(predictions=predictions, references=labels)
+            precision.add_batch(predictions=predictions, references=labels)
+            recall.add_batch(predictions=predictions, references=labels)
+            # metric_list.add_batch(
+            #     predictions=predictions,
+            #     references=references,
+            # )
             specificity_metric.update(predictions, references)
-        eval_metric = metric_list.compute(zero_division=0)
+        eval_metric = {
+            "accuracy": accuracy.compute()["accuracy"],
+            "precision": precision.compute(zero_division=0)["precision"],
+            "recall": recall.compute(zero_division=0)["recall"]
+        }
         # Calculate specificity and use recall as sensitivity
         score_specificity = specificity_metric.compute()
         logger.info(f"epoch {epoch}: {eval_metric}, specificity: {score_specificity}")
