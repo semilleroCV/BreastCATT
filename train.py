@@ -38,6 +38,7 @@ from torchvision.transforms import (
     RandomResizedCrop,
     Resize,
     ToTensor,
+    Lambda,
 )
 from tqdm.auto import tqdm
 from breastcatt import fvit
@@ -371,20 +372,20 @@ def main():
     else:
         raise ValueError(f"Unknown vit_version: {args.vit_version}")
         
-    train_transforms = Compose(
-        [
-            RandomResizedCrop(size),
-            RandomHorizontalFlip(),
-            ToTensor(),
-            # normalize,
-        ]
-    )
+    # Min-max normalization to [0, 1] for floating-point TIFFs
+    min_max_norm = Lambda(lambda x: (x - x.min()) / (x.max() - x.min() + 1e-8))
+
+    train_transforms = Compose([
+        RandomResizedCrop(224),
+        RandomHorizontalFlip(),
+        ToTensor(),
+        min_max_norm,
+    ])
     val_transforms = Compose(
         [
             Resize(size),
-            CenterCrop(size),
             ToTensor(),
-            # normalize,
+            min_max_norm,
         ]
     )
 
