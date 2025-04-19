@@ -209,25 +209,67 @@ class MultiModalVisionTransformer(nn.Module):
             json.dump(config, f)
 
     @classmethod
-    def from_pretrained(cls, load_directory, **kwargs):
-        """
-        Load the model weights and configuration from the specified directory in Hugging Face style.
-        """
-        with open(os.path.join(load_directory, "config.json"), "r") as f:
-            config = json.load(f)
-        config.update(kwargs)
-        model = cls(**config)
-        state_dict = torch.load(os.path.join(load_directory, "pytorch_model.bin"), map_location="cpu")
-        model.load_state_dict(state_dict)
+    def from_pretrained(cls, checkpoint_path, map_location, **model_kwargs):
+        # 1. Inicializar el modelo multimodal
+        model = cls(**model_kwargs)
+
+        # 2. Cargar checkpoint del MAE
+        print(f"Cargando checkpoint de: {checkpoint_path}")
+        mae_state = torch.load(checkpoint_path, map_location=map_location)
+
+        if "model" in mae_state:
+            mae_state = mae_state["model"]  # en caso de que esté anidado
+
+        new_state_dict = {}
+        missing = []
+        loaded = []
+        if "patch_embed.proj.weight" in mae_state:
+            weight = mae_state["patch_embed.proj.weight"]
+            if weight.shape[1] == 3:  # 3 input channels
+                print("Adaptando patch_embed.proj.weight de 3 canales a 1 canal...")
+                mae_state["patch_embed.proj.weight"] = weight.mean(dim=1, keepdim=True)  # [768, 1, 16, 16]
+        # 3. Reasignar nombres de capas MAE a los del modelo multimodal
+        for k, v in mae_state.items():
+            if k.startswith("patch_embed.") or k.startswith("norm."):
+                new_state_dict[k] = v
+                loaded.append(k)
+            elif k.startswith("blocks."):
+                # Convertir: blocks.0.attn.qkv.weight → blocks.0.block.attn.qkv.weight
+                parts = k.split(".")
+                block_id = parts[1]
+                rest = ".".join(parts[2:])
+                new_k = f"blocks.{block_id}.block.{rest}"
+                if new_k in model.state_dict():
+                    new_state_dict[new_k] = v
+                    loaded.append(new_k)
+                else:
+                    missing.append(new_k)
+
+        # 4. Cargar pesos en el modelo
+        msg = model.load_state_dict(new_state_dict, strict=False)
+
+        print(f"\n✅ Pesos cargados: {len(loaded)} capas.")
+        print(f"❌ No encontrados en el modelo: {len(missing)} capas.")
+        print(f"📋 Detalles del load_state_dict:\n{msg}")
+
         return model
 
 
 # Factory function for multi-modal Vision Transformer (small version).
-def multimodal_vit_small_patch16(use_cross_attn=True, use_segmentation=False, **kwargs):
+def multimodal_vit_small_patch16(
+    use_cross_attn: bool = True,
+    use_segmentation: bool = False,
+    num_classes: int = 1000,
+    checkpoint_path: str = None,
+    map_location: str = "cpu",
+    **kwargs
+):
     """
     Small ViT: For ablation, set use_cross_attn/use_segmentation as needed.
+    If `checkpoint_path` is provided, loads MAE weights filtered to matching layers.
     """
-    model = MultiModalVisionTransformer(
+    init_args = dict(
+        # Estos son los mismos parámetros que pasabas antes
         patch_size=16,
         in_chans=1,
         embed_dim=384 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
@@ -239,16 +281,31 @@ def multimodal_vit_small_patch16(use_cross_attn=True, use_segmentation=False, **
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
+        num_classes=num_classes,
         **kwargs
     )
-    return model
+
+    # Si me diste checkpoint_path, delego en from_pretrained
+    if checkpoint_path:
+        return MultiModalVisionTransformer.from_pretrained(
+            checkpoint_path=checkpoint_path,
+            map_location=map_location,
+            **init_args
+        )
+
+    # Si no, instancio “en limpio”
+    return MultiModalVisionTransformer(**init_args)
 
 # Factory function for multi-modal Vision Transformer (base version).
-def multimodal_vit_base_patch16(use_cross_attn=True, use_segmentation=False, **kwargs):
-    """
-    Base ViT: For ablation, set use_cross_attn/use_segmentation as needed.
-    """
-    model = MultiModalVisionTransformer(
+def multimodal_vit_base_patch16(
+    use_cross_attn: bool = True,
+    use_segmentation: bool = False,
+    num_classes: int = 1,
+    checkpoint_path: str = None,
+    map_location: str = "cpu",
+    **kwargs
+):
+    init_args = dict(
         patch_size=16,
         in_chans=1,
         embed_dim=768 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
@@ -260,16 +317,32 @@ def multimodal_vit_base_patch16(use_cross_attn=True, use_segmentation=False, **k
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
+        num_classes=num_classes,
         **kwargs
     )
-    return model
+
+    if checkpoint_path:
+        return MultiModalVisionTransformer.from_pretrained(
+            checkpoint_path=checkpoint_path,
+            map_location=map_location,
+            **init_args
+        )
+
+    return MultiModalVisionTransformer(**init_args)
 
 # Factory function for multi-modal Vision Transformer (large version).
-def multimodal_vit_large_patch16(use_cross_attn=True, use_segmentation=False, **kwargs):
+def multimodal_vit_large_patch16(
+    use_cross_attn: bool = True,
+    use_segmentation: bool = False,
+    num_classes: int = 1,
+    checkpoint_path: str = None,
+    map_location: str = "cpu",
+    **kwargs
+):
     """
     Large ViT: For ablation, set use_cross_attn/use_segmentation as needed.
     """
-    model = MultiModalVisionTransformer(
+    init_args = dict(
         patch_size=16,
         in_chans=1,
         embed_dim=1024 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
@@ -281,17 +354,33 @@ def multimodal_vit_large_patch16(use_cross_attn=True, use_segmentation=False, **
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
+        num_classes=num_classes,
         **kwargs
     )
-    return model
+
+    if checkpoint_path:
+        return MultiModalVisionTransformer.from_pretrained(
+            checkpoint_path=checkpoint_path,
+            map_location=map_location,
+            **init_args
+    )
+
+    return MultiModalVisionTransformer(**init_args)
 
 # Factory function for multi-modal Vision Transformer (huge version).
-def multimodal_vit_huge_patch16(use_cross_attn=True, use_segmentation=False, **kwargs):
+def multimodal_vit_huge_patch16(
+    use_cross_attn: bool = True,
+    use_segmentation: bool = False,
+    num_classes: int = 1,
+    checkpoint_path: str = None,
+    map_location: str = "cpu",
+    **kwargs
+):
     """
     Huge ViT: For ablation, set use_cross_attn/use_segmentation as needed.
     """
-    model = MultiModalVisionTransformer(
-        patch_size=16,
+    init_args = dict(
+        patch_size=14,
         in_chans=1,
         embed_dim=1280 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
         depth=32,
@@ -302,6 +391,14 @@ def multimodal_vit_huge_patch16(use_cross_attn=True, use_segmentation=False, **k
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
+        num_classes=num_classes,
         **kwargs
     )
-    return model
+    if checkpoint_path:
+        return MultiModalVisionTransformer.from_pretrained(
+            checkpoint_path=checkpoint_path,
+            map_location=map_location,
+            **init_args
+    )
+
+    return MultiModalVisionTransformer(**init_args)

@@ -352,14 +352,16 @@ def main():
         model = fvit.multimodal_vit_base_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1
+            num_classes=1,
+            checkpoint_path=r"C:\Users\opera\OneDrive\Documentos\GitHub\BreastCATT\checkpoints\fvit\mae_pretrain_vit_base.pth"
         )
         size = 224
     elif args.vit_version == "large":
         model = fvit.multimodal_vit_large_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1
+            num_classes=1,
+            checkpoint_path=r"C:\Users\opera\OneDrive\Documentos\GitHub\BreastCATT\checkpoints\fvit\mae_pretrain_vit_large.pth"
         )
         size = 224
     elif args.vit_version == "huge":
