@@ -8,3 +8,4 @@ wandb
 git+https://github.com/huggingface/transformers.git
 ml_collections
 schedulefree
+notebook
