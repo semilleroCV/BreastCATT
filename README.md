@@ -1,31 +1,23 @@
 # BreastCATT
 ...existing title or add your paper title...
 
-# Approach
+## Approach
 ...existing abstract...
 
-# Experiments
+## Experiments
 ...existing experiments description...
 
-# Usage
-**Important note:**
+## Usage
 
-To ensure successful execution of our scripts, install the library Transformers from source and fulfill the example-specific requirements. Follow these steps in a new virtual environment:
+To get started, first clone this repository:
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/huggingface/transformers
-```
-2. Change to the repository directory:
-```bash
-cd transformers
-```
-3. Install the library:
-```bash
-pip install .
+git clone https://github.com/semilleroCV/BreastCATT.git
+cd BreastCATT
 ```
 
-Then, navigate to the desired example folder and run:
+Then, install the required dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
