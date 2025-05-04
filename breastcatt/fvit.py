@@ -114,6 +114,27 @@ class MultiModalVisionTransformer(nn.Module):
 
         self.initialize_weights()
 
+    @classmethod
+    def create_from_init_args(cls, init_args, checkpoint_path=None, map_location="cpu"):
+        """
+        Create a model from init_args, optionally loading weights from a checkpoint.
+        
+        Args:
+            init_args: Dictionary of initialization arguments
+            checkpoint_path: Path to a checkpoint to load weights from
+            map_location: Device to map the checkpoint to
+        
+        Returns:
+            A MultiModalVisionTransformer model
+        """
+        if checkpoint_path:
+            return cls.from_pretrained(
+                checkpoint_path=checkpoint_path,
+                map_location=map_location,
+                **init_args
+            )
+        return cls(**init_args)
+
     def initialize_weights(self):
         # initialization
         # initialize (and freeze) pos_embed by sin-cos embedding
@@ -210,31 +231,31 @@ class MultiModalVisionTransformer(nn.Module):
 
     @classmethod
     def from_pretrained(cls, checkpoint_path, map_location, **model_kwargs):
-        # 1. Inicializar el modelo multimodal
+        # 1. Initialize the multimodal model
         model = cls(**model_kwargs)
 
-        # 2. Cargar checkpoint del MAE
-        print(f"Cargando checkpoint de: {checkpoint_path}")
+        # 2. Load MAE checkpoint
+        print(f"Loading checkpoint from: {checkpoint_path}")
         mae_state = torch.load(checkpoint_path, map_location=map_location)
 
         if "model" in mae_state:
-            mae_state = mae_state["model"]  # en caso de que esté anidado
+            mae_state = mae_state["model"]  # in case it's nested
 
         new_state_dict = {}
         missing = []
         loaded = []
         if "patch_embed.proj.weight" in mae_state:
             weight = mae_state["patch_embed.proj.weight"]
-            if weight.shape[1] == 3:  # 3 input channels
-                print("Adaptando patch_embed.proj.weight de 3 canales a 1 canal...")
+            if weight.shape[1] == 3:  
+                print("Adapting patch_embed.proj.weight from 3 channels to 1 channel...")
                 mae_state["patch_embed.proj.weight"] = weight.mean(dim=1, keepdim=True)  # [768, 1, 16, 16]
-        # 3. Reasignar nombres de capas MAE a los del modelo multimodal
+        # 3. Remap MAE layer names to multimodal model
         for k, v in mae_state.items():
             if k.startswith("patch_embed.") or k.startswith("norm."):
                 new_state_dict[k] = v
                 loaded.append(k)
             elif k.startswith("blocks."):
-                # Convertir: blocks.0.attn.qkv.weight → blocks.0.block.attn.qkv.weight
+                # Convert: blocks.0.attn.qkv.weight → blocks.0.block.attn.qkv.weight
                 parts = k.split(".")
                 block_id = parts[1]
                 rest = ".".join(parts[2:])
@@ -245,12 +266,12 @@ class MultiModalVisionTransformer(nn.Module):
                 else:
                     missing.append(new_k)
 
-        # 4. Cargar pesos en el modelo
+        # 4. Load weights into the model
         msg = model.load_state_dict(new_state_dict, strict=False)
 
-        print(f"\n✅ Pesos cargados: {len(loaded)} capas.")
-        print(f"❌ No encontrados en el modelo: {len(missing)} capas.")
-        print(f"📋 Detalles del load_state_dict:\n{msg}")
+        print(f"\n✅ Loaded weights: {len(loaded)} layers.")
+        print(f"❌ Not found in model: {len(missing)} layers.")
+        print(f"📋 Details of load_state_dict:\n{msg}")
 
         return model
 
@@ -269,7 +290,6 @@ def multimodal_vit_small_patch16(
     If `checkpoint_path` is provided, loads MAE weights filtered to matching layers.
     """
     init_args = dict(
-        # Estos son los mismos parámetros que pasabas antes
         patch_size=16,
         in_chans=1,
         embed_dim=384 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
@@ -285,16 +305,7 @@ def multimodal_vit_small_patch16(
         **kwargs
     )
 
-    # Si me diste checkpoint_path, delego en from_pretrained
-    if checkpoint_path:
-        return MultiModalVisionTransformer.from_pretrained(
-            checkpoint_path=checkpoint_path,
-            map_location=map_location,
-            **init_args
-        )
-
-    # Si no, instancio “en limpio”
-    return MultiModalVisionTransformer(**init_args)
+    return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
 
 # Factory function for multi-modal Vision Transformer (base version).
 def multimodal_vit_base_patch16(
@@ -321,14 +332,7 @@ def multimodal_vit_base_patch16(
         **kwargs
     )
 
-    if checkpoint_path:
-        return MultiModalVisionTransformer.from_pretrained(
-            checkpoint_path=checkpoint_path,
-            map_location=map_location,
-            **init_args
-        )
-
-    return MultiModalVisionTransformer(**init_args)
+    return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
 
 # Factory function for multi-modal Vision Transformer (large version).
 def multimodal_vit_large_patch16(
@@ -358,14 +362,7 @@ def multimodal_vit_large_patch16(
         **kwargs
     )
 
-    if checkpoint_path:
-        return MultiModalVisionTransformer.from_pretrained(
-            checkpoint_path=checkpoint_path,
-            map_location=map_location,
-            **init_args
-    )
-
-    return MultiModalVisionTransformer(**init_args)
+    return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
 
 # Factory function for multi-modal Vision Transformer (huge version).
 def multimodal_vit_huge_patch16(
@@ -394,11 +391,5 @@ def multimodal_vit_huge_patch16(
         num_classes=num_classes,
         **kwargs
     )
-    if checkpoint_path:
-        return MultiModalVisionTransformer.from_pretrained(
-            checkpoint_path=checkpoint_path,
-            map_location=map_location,
-            **init_args
-    )
-
-    return MultiModalVisionTransformer(**init_args)
+    
+    return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
