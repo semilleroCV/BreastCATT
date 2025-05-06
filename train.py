@@ -20,7 +20,6 @@ import logging
 import math
 import os
 from pathlib import Path
-import wandb
 
 import datasets
 import evaluate
@@ -35,19 +34,19 @@ from torchmetrics.classification import BinarySpecificity
 from torchvision.transforms import (
     CenterCrop,
     Compose,
-    Lambda,
-    Normalize,
     RandomHorizontalFlip,
     RandomResizedCrop,
     Resize,
     ToTensor,
+    Lambda,
 )
 from tqdm.auto import tqdm
-
+from breastcatt import fvit
 import transformers
-from transformers import AutoConfig, AutoImageProcessor, AutoModelForImageClassification, SchedulerType, get_scheduler
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
+
+import schedulefree
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -96,12 +95,6 @@ def parse_args():
         help="Percent to split off of train for validation",
     )
     parser.add_argument(
-        "--model_name_or_path",
-        type=str,
-        help="Path to pretrained model or model identifier from huggingface.co/models.",
-        default="google/vit-base-patch16-224-in21k",
-    )
-    parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
         default=8,
@@ -120,7 +113,7 @@ def parse_args():
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay to use.")
-    parser.add_argument("--num_train_epochs", type=int, default=3, help="Total number of training epochs to perform.")
+    parser.add_argument("--num_train_epochs", type=int, default=1, help="Total number of training epochs to perform.")
     parser.add_argument(
         "--max_train_steps",
         type=int,
@@ -132,13 +125,6 @@ def parse_args():
         type=int,
         default=1,
         help="Number of updates steps to accumulate before performing a backward/update pass.",
-    )
-    parser.add_argument(
-        "--lr_scheduler_type",
-        type=SchedulerType,
-        default="linear",
-        help="The scheduler type to use.",
-        choices=["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"],
     )
     parser.add_argument(
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
@@ -189,7 +175,7 @@ def parse_args():
     parser.add_argument(
         "--wandb_project",
         type=str,
-        default="breast-cancer",
+        default="colcaci",
         help=(
             'The name of the project to which the logs will be uploaded on Weights & Biases. Only applicable'
             ' when `--report_to wandb` is passed.'
@@ -211,6 +197,23 @@ def parse_args():
         type=str,
         default="label",
         help="The name of the dataset column containing the labels. Defaults to 'label'.",
+    )
+    parser.add_argument(
+        "--use_cross_attn",
+        action="store_true",
+        help="Whether to use cross-attention in the model.",
+    )
+    parser.add_argument(
+        "--use_segmentation",
+        action="store_true",
+        help="Whether to use segmentation in the model.",
+    )
+    parser.add_argument(
+        "--vit_version",
+        type=str,
+        default="base",
+        choices=["small", "base", "large", "huge"],
+        help="Which ViT model version to use: small, base, large, or huge.",
     )
     args = parser.parse_args()
 
@@ -338,66 +341,67 @@ def main():
     #
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
-    config = AutoConfig.from_pretrained(
-        args.model_name_or_path,
-        num_labels=len(labels),
-        id2label=id2label,
-        label2id=label2id,
-        finetuning_task="image-classification",
-        trust_remote_code=args.trust_remote_code,
-    )
-    image_processor = AutoImageProcessor.from_pretrained(
-        args.model_name_or_path,
-        trust_remote_code=args.trust_remote_code,
-    )
-    model = AutoModelForImageClassification.from_pretrained(
-        args.model_name_or_path,
-        from_tf=bool(".ckpt" in args.model_name_or_path),
-        config=config,
-        ignore_mismatched_sizes=args.ignore_mismatched_sizes,
-        trust_remote_code=args.trust_remote_code,
-    )
-
-    # Preprocessing the datasets
-
-    # Define torchvision transforms to be applied to each image.
-    if "shortest_edge" in image_processor.size:
-        size = image_processor.size["shortest_edge"]
+    if args.vit_version == "small":
+        model = fvit.multimodal_vit_small_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1
+        )
+        size = 224
+    elif args.vit_version == "base":
+        model = fvit.multimodal_vit_base_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1,
+            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_base.pth'
+        )
+        size = 224
+    elif args.vit_version == "large":
+        model = fvit.multimodal_vit_large_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1,
+            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_large.pth'
+        )
+        size = 224
+    elif args.vit_version == "huge":
+        model = fvit.multimodal_vit_huge_patch16(
+            use_cross_attn=args.use_cross_attn,
+            use_segmentation=args.use_segmentation,
+            num_classes=1
+        )
+        size = 224
     else:
-        size = (image_processor.size["height"], image_processor.size["width"])
-    normalize = (
-        Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
-        if hasattr(image_processor, "image_mean") and hasattr(image_processor, "image_std")
-        else Lambda(lambda x: x)
-    )
-    train_transforms = Compose(
-        [
-            RandomResizedCrop(size),
-            RandomHorizontalFlip(),
-            ToTensor(),
-            normalize,
-        ]
-    )
+        raise ValueError(f"Unknown vit_version: {args.vit_version}")
+        
+    # Min-max normalization to [0, 1] for floating-point TIFFs
+    min_max_norm = Lambda(lambda x: (x - x.min()) / (x.max() - x.min() + 1e-8))
+
+    train_transforms = Compose([
+        RandomResizedCrop(224),
+        RandomHorizontalFlip(),
+        ToTensor(),
+        min_max_norm,
+    ])
     val_transforms = Compose(
         [
-            Resize(size),
-            CenterCrop(size),
+            Resize((224, 224)),
             ToTensor(),
-            normalize,
+            min_max_norm,
         ]
     )
 
     def preprocess_train(example_batch):
         """Apply _train_transforms across a batch."""
         example_batch["pixel_values"] = [
-            train_transforms(image.convert("RGB")) for image in example_batch[args.image_column_name]
+            train_transforms(image) for image in example_batch[args.image_column_name]
         ]
         return example_batch
 
     def preprocess_val(example_batch):
         """Apply _val_transforms across a batch."""
         example_batch["pixel_values"] = [
-            val_transforms(image.convert("RGB")) for image in example_batch[args.image_column_name]
+            val_transforms(image) for image in example_batch[args.image_column_name]
         ]
         return example_batch
 
@@ -414,8 +418,9 @@ def main():
     # DataLoaders creation:
     def collate_fn(examples):
         pixel_values = torch.stack([example["pixel_values"] for example in examples])
+        texts = [example["text"] for example in examples]
         labels = torch.tensor([example[args.label_column_name] for example in examples])
-        return {"pixel_values": pixel_values, "labels": labels}
+        return {"pixel_values": pixel_values, "texts": texts, "labels": labels} 
 
     train_dataloader = DataLoader(
         train_dataset, shuffle=True, collate_fn=collate_fn, batch_size=args.per_device_train_batch_size
@@ -435,27 +440,18 @@ def main():
             "weight_decay": 0.0,
         },
     ]
-    optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
+    optimizer = schedulefree.AdamWScheduleFree(optimizer_grouped_parameters, lr=args.learning_rate,
+                                               warmup_steps=args.num_warmup_steps)
 
-    # Scheduler and math around the number of training steps.
+    # Math around the number of training steps.
     overrode_max_train_steps = False
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
     if args.max_train_steps is None:
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
         overrode_max_train_steps = True
 
-    lr_scheduler = get_scheduler(
-        name=args.lr_scheduler_type,
-        optimizer=optimizer,
-        num_warmup_steps=args.num_warmup_steps * accelerator.num_processes,
-        num_training_steps=args.max_train_steps
-        if overrode_max_train_steps
-        else args.max_train_steps * accelerator.num_processes,
-    )
-
-    # Prepare everything with our `accelerator`.
-    model, optimizer, train_dataloader, eval_dataloader, lr_scheduler = accelerator.prepare(
-        model, optimizer, train_dataloader, eval_dataloader, lr_scheduler
+    model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
+        model, optimizer, train_dataloader, eval_dataloader
     )
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
@@ -474,13 +470,13 @@ def main():
     # The trackers initializes automatically on the main process.
     if args.with_tracking:
         experiment_config = vars(args)
-        # TensorBoard cannot log Enums, need the raw value
-        experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"].value
         accelerator.init_trackers(args.wandb_project, experiment_config)
 
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
-    metric_list = evaluate.combine(["accuracy", "recall", "precision"])
-    specificity_metric = BinarySpecificity().to(accelerator.device)
+    accuracy = evaluate.load("accuracy")
+    precision = evaluate.load("precision")
+    recall = evaluate.load("recall")
+    specificity_metric = BinarySpecificity(zero_division=0).to(accelerator.device)
 
     # Train!
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -530,6 +526,7 @@ def main():
 
     for epoch in range(starting_epoch, args.num_train_epochs):
         model.train()
+        optimizer.train()
         if args.with_tracking:
             total_loss = 0
         if args.resume_from_checkpoint and epoch == starting_epoch and resume_step is not None:
@@ -546,7 +543,6 @@ def main():
                     total_loss += loss.detach().float()
                 accelerator.backward(loss)
                 optimizer.step()
-                lr_scheduler.step()
                 optimizer.zero_grad()
 
             # Checks if the accelerator has performed an optimization step behind the scenes
@@ -570,7 +566,6 @@ def main():
                             save_function=accelerator.save,
                         )
                         if accelerator.is_main_process:
-                            image_processor.save_pretrained(args.output_dir)
                             api.upload_folder(
                                 commit_message=f"Training in progress epoch {epoch}",
                                 folder_path=args.output_dir,
@@ -583,19 +578,29 @@ def main():
                 break
 
         model.eval()
+        optimizer.eval()
         # Reset specificity metric
         specificity_metric.reset()
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
-            predictions = outputs.logits.argmax(dim=-1)
+            logits = outputs.logits
+            scores = torch.sigmoid(logits)
+            predictions = (scores >= 0.5).long().squeeze(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
-            metric_list.add_batch(
-                predictions=predictions,
-                references=references,
-            )
+            accuracy.add_batch(predictions=predictions, references=references)
+            precision.add_batch(predictions=predictions, references=references)
+            recall.add_batch(predictions=predictions, references=references)
+            # metric_list.add_batch(
+            #     predictions=predictions,
+            #     references=references,
+            # )
             specificity_metric.update(predictions, references)
-        eval_metric = metric_list.compute()
+        eval_metric = {
+            "accuracy": accuracy.compute()["accuracy"],
+            "precision": precision.compute(zero_division=0)["precision"],
+            "recall": recall.compute(zero_division=0)["recall"]
+        }
         # Calculate specificity and use recall as sensitivity
         score_specificity = specificity_metric.compute()
         logger.info(f"epoch {epoch}: {eval_metric}, specificity: {score_specificity}")
@@ -621,7 +626,6 @@ def main():
                 args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
             )
             if accelerator.is_main_process:
-                image_processor.save_pretrained(args.output_dir)
                 api.upload_folder(
                     commit_message=f"Training in progress epoch {epoch}",
                     folder_path=args.output_dir,
@@ -640,13 +644,12 @@ def main():
         accelerator.end_training()
 
     if args.output_dir is not None:
-        accelerator.wait_for_everyone()
+        # accelerator.wait_for_everyone()
         unwrapped_model = accelerator.unwrap_model(model)
         unwrapped_model.save_pretrained(
             args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
         )
         if accelerator.is_main_process:
-            image_processor.save_pretrained(args.output_dir)
             if args.push_to_hub:
                 api.upload_folder(
                     commit_message="End of training",
