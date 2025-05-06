@@ -540,6 +540,7 @@ def main():
 
     for epoch in range(starting_epoch, args.num_train_epochs):
         model.train()
+        optimizer.train()
         if args.with_tracking:
             total_loss = 0
         if args.resume_from_checkpoint and epoch == starting_epoch and resume_step is not None:
@@ -628,7 +629,6 @@ def main():
             )
 
         if args.push_to_hub and epoch < args.num_train_epochs - 1:
-            print("Entré acá!!!! linea 625")
             accelerator.wait_for_everyone()
             unwrapped_model = accelerator.unwrap_model(model)
             unwrapped_model.save_pretrained(
@@ -645,7 +645,6 @@ def main():
                 )
 
         if args.checkpointing_steps is not None and args.checkpointing_steps == "epoch":
-            print("Entré acá!!!! linea 642")
             output_dir = f"epoch_{epoch}"
             if args.output_dir is not None:
                 output_dir = os.path.join(args.output_dir, output_dir)
