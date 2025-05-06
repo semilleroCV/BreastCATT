@@ -209,7 +209,7 @@ def parse_args():
         type=str2bool,
         nargs="?",
         const=True,
-        default=False,
+        default=True,
         help="Whether or not to enable to load a pretrained model whose head dimensions are different.",
     )
     parser.add_argument(
