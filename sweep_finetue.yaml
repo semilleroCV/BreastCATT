@@ -1,0 +1,36 @@
+method: bayes
+metric:
+  goal: maximize
+  name: sensitivity
+parameters:
+  model_name_or_path:
+    distribution: categorical
+    values:
+      - google/vit-base-patch16-224-in21k
+  # max_train_samples: # for debug purposes
+  #  value: 100
+  #max_eval_samples: # for debug purposes
+  #  value: 50
+  dataset_name:
+    distribution: categorical
+    values:
+      - SemilleroCV/DMR-IR
+  gradient_accumulation_steps:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  checkpointing_steps:
+    value: null
+  learning_rate:
+    distribution: uniform
+    max: 0.0001
+    min: 2.5e-05
+  num_train_epochs:
+    value: 5
+  per_device_eval_batch_size:
+    value: 16
+  per_device_train_batch_size:
+    distribution: int_uniform
+    max: 8
+    min: 4
+program: finetune.py
