@@ -20,7 +20,6 @@ import logging
 import math
 import os
 from pathlib import Path
-import wandb
 
 import datasets
 import evaluate
@@ -49,6 +48,8 @@ from transformers import AutoConfig, AutoImageProcessor, AutoModelForImageClassi
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
+import schedulefree
+
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.51.0.dev0")
@@ -57,6 +58,15 @@ logger = get_logger(__name__)
 
 require_version("datasets>=2.0.0", "To fix: pip install -r examples/pytorch/image-classification/requirements.txt")
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Fine-tune a Transformers model on an image classification dataset")
@@ -134,25 +144,21 @@ def parse_args():
         help="Number of updates steps to accumulate before performing a backward/update pass.",
     )
     parser.add_argument(
-        "--lr_scheduler_type",
-        type=SchedulerType,
-        default="linear",
-        help="The scheduler type to use.",
-        choices=["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"],
-    )
-    parser.add_argument(
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
     )
-    parser.add_argument("--output_dir", type=str, default=None, help="Where to store the final model.")
-    parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
-    parser.add_argument("--push_to_hub", action="store_true", help="Whether or not to push the model to the Hub.")
+    parser.add_argument("--output_dir", type=str, default="runs", help="Where to store the final model.")
+    parser.add_argument("--seed", type=int, default=1757, help="A seed for reproducible training.")
+    parser.add_argument("--push_to_hub", type=str2bool, nargs="?", const=False, default=False, help="Whether or not to push the model to the Hub.")
     parser.add_argument(
         "--hub_model_id", type=str, help="The name of the repository to keep in sync with the local `output_dir`."
     )
     parser.add_argument("--hub_token", type=str, help="The token to use to push to the Model Hub.")
     parser.add_argument(
         "--trust_remote_code",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=True,
         help=(
             "Whether to trust the execution of code from datasets/models defined on the Hub."
             " This option should only be set to `True` for repositories you trust and in which you have read the"
@@ -173,7 +179,10 @@ def parse_args():
     )
     parser.add_argument(
         "--with_tracking",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=True,
         help="Whether to enable experiment trackers for logging.",
     )
     parser.add_argument(
@@ -189,7 +198,7 @@ def parse_args():
     parser.add_argument(
         "--wandb_project",
         type=str,
-        default="breast-cancer",
+        default="colcaci",
         help=(
             'The name of the project to which the logs will be uploaded on Weights & Biases. Only applicable'
             ' when `--report_to wandb` is passed.'
@@ -197,7 +206,10 @@ def parse_args():
     )
     parser.add_argument(
         "--ignore_mismatched_sizes",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
         help="Whether or not to enable to load a pretrained model whose head dimensions are different.",
     )
     parser.add_argument(
@@ -224,6 +236,11 @@ def parse_args():
                 "Need an `output_dir` to create a repo when `--push_to_hub` or `with_tracking` is specified."
             )
 
+    effective_bs = args.per_device_train_batch_size * args.gradient_accumulation_steps
+    args.output_dir = (
+        f"{args.output_dir}/{args.model_name_or_path.split('/')[-1]}"
+        f"-{effective_bs}bs-{args.num_train_epochs}ep-{args.learning_rate}lr"
+    )
     if args.output_dir is not None:
         os.makedirs(args.output_dir, exist_ok=True)
 
@@ -435,7 +452,9 @@ def main():
             "weight_decay": 0.0,
         },
     ]
-    optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
+    optimizer = schedulefree.AdamWScheduleFree(optimizer_grouped_parameters,
+                                               lr=args.learning_rate,
+                                               warmup_steps=args.num_warmup_steps,)
 
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
@@ -444,18 +463,9 @@ def main():
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
         overrode_max_train_steps = True
 
-    lr_scheduler = get_scheduler(
-        name=args.lr_scheduler_type,
-        optimizer=optimizer,
-        num_warmup_steps=args.num_warmup_steps * accelerator.num_processes,
-        num_training_steps=args.max_train_steps
-        if overrode_max_train_steps
-        else args.max_train_steps * accelerator.num_processes,
-    )
-
     # Prepare everything with our `accelerator`.
-    model, optimizer, train_dataloader, eval_dataloader, lr_scheduler = accelerator.prepare(
-        model, optimizer, train_dataloader, eval_dataloader, lr_scheduler
+    model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
+        model, optimizer, train_dataloader, eval_dataloader,
     )
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
@@ -474,8 +484,6 @@ def main():
     # The trackers initializes automatically on the main process.
     if args.with_tracking:
         experiment_config = vars(args)
-        # TensorBoard cannot log Enums, need the raw value
-        experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"].value
         accelerator.init_trackers(args.wandb_project, experiment_config)
 
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
@@ -548,7 +556,6 @@ def main():
                     total_loss += loss.detach().float()
                 accelerator.backward(loss)
                 optimizer.step()
-                lr_scheduler.step()
                 optimizer.zero_grad()
 
             # Checks if the accelerator has performed an optimization step behind the scenes
@@ -585,6 +592,7 @@ def main():
                 break
 
         model.eval()
+        optimizer.eval()
         # Reset specificity metric
         specificity_metric.reset()
         for step, batch in enumerate(eval_dataloader):
@@ -620,6 +628,7 @@ def main():
             )
 
         if args.push_to_hub and epoch < args.num_train_epochs - 1:
+            print("Entré acá!!!! linea 625")
             accelerator.wait_for_everyone()
             unwrapped_model = accelerator.unwrap_model(model)
             unwrapped_model.save_pretrained(
@@ -635,7 +644,8 @@ def main():
                     token=args.hub_token,
                 )
 
-        if args.checkpointing_steps == "epoch":
+        if args.checkpointing_steps is not None and args.checkpointing_steps == "epoch":
+            print("Entré acá!!!! linea 642")
             output_dir = f"epoch_{epoch}"
             if args.output_dir is not None:
                 output_dir = os.path.join(args.output_dir, output_dir)
