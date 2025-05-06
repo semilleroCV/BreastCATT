@@ -41,7 +41,7 @@ from torchvision.transforms import (
     Lambda,
 )
 from tqdm.auto import tqdm
-from breastcatt import fvit
+from breastcatt import tfvit
 import transformers
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
@@ -342,14 +342,14 @@ def main():
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
     if args.vit_version == "small":
-        model = fvit.multimodal_vit_small_patch16(
+        model = tfvit.multimodal_vit_small_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1
         )
         size = 224
     elif args.vit_version == "base":
-        model = fvit.multimodal_vit_base_patch16(
+        model = tfvit.multimodal_vit_base_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1,
@@ -357,7 +357,7 @@ def main():
         )
         size = 224
     elif args.vit_version == "large":
-        model = fvit.multimodal_vit_large_patch16(
+        model = tfvit.multimodal_vit_large_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1,
@@ -365,7 +365,7 @@ def main():
         )
         size = 224
     elif args.vit_version == "huge":
-        model = fvit.multimodal_vit_huge_patch16(
+        model = tfvit.multimodal_vit_huge_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1
@@ -591,10 +591,6 @@ def main():
             accuracy.add_batch(predictions=predictions, references=references)
             precision.add_batch(predictions=predictions, references=references)
             recall.add_batch(predictions=predictions, references=references)
-            # metric_list.add_batch(
-            #     predictions=predictions,
-            #     references=references,
-            # )
             specificity_metric.update(predictions, references)
         eval_metric = {
             "accuracy": accuracy.compute()["accuracy"],
