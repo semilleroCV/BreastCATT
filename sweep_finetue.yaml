@@ -16,7 +16,7 @@ parameters:
     values:
       - SemilleroCV/DMR-IR
   checkpointing_steps:
-    value: null
+    value: 1000
   learning_rate:
     distribution: uniform
     max: 0.0001
