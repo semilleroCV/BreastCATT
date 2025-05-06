@@ -56,6 +56,15 @@ logger = get_logger(__name__)
 
 require_version("datasets>=2.0.0", "To fix: pip install -r examples/pytorch/image-classification/requirements.txt")
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Fine-tune a Transformers model on an image classification dataset")
@@ -131,14 +140,17 @@ def parse_args():
     )
     parser.add_argument("--output_dir", type=str, default=None, help="Where to store the final model.")
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
-    parser.add_argument("--push_to_hub", action="store_true", help="Whether or not to push the model to the Hub.")
+    parser.add_argument("--push_to_hub", type=str2bool, nargs="?", const=False, default=False, help="Whether or not to push the model to the Hub.")
     parser.add_argument(
         "--hub_model_id", type=str, help="The name of the repository to keep in sync with the local `output_dir`."
     )
     parser.add_argument("--hub_token", type=str, help="The token to use to push to the Model Hub.")
     parser.add_argument(
         "--trust_remote_code",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=True,
         help=(
             "Whether to trust the execution of code from datasets/models defined on the Hub."
             " This option should only be set to `True` for repositories you trust and in which you have read the"
@@ -159,7 +171,10 @@ def parse_args():
     )
     parser.add_argument(
         "--with_tracking",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=True,
         help="Whether to enable experiment trackers for logging.",
     )
     parser.add_argument(
@@ -183,7 +198,10 @@ def parse_args():
     )
     parser.add_argument(
         "--ignore_mismatched_sizes",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=True,
         help="Whether or not to enable to load a pretrained model whose head dimensions are different.",
     )
     parser.add_argument(
@@ -200,12 +218,18 @@ def parse_args():
     )
     parser.add_argument(
         "--use_cross_attn",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
         help="Whether to use cross-attention in the model.",
     )
     parser.add_argument(
         "--use_segmentation",
-        action="store_true",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
         help="Whether to use segmentation in the model.",
     )
     parser.add_argument(
