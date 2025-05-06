@@ -15,10 +15,6 @@ parameters:
     distribution: categorical
     values:
       - SemilleroCV/DMR-IR
-  gradient_accumulation_steps:
-    distribution: int_uniform
-    max: 2
-    min: 1
   checkpointing_steps:
     value: null
   learning_rate:
