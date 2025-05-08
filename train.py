@@ -251,6 +251,11 @@ def parse_args():
                 "Need an `output_dir` to create a repo when `--push_to_hub` or `with_tracking` is specified."
             )
 
+    effective_bs = args.per_device_train_batch_size * args.gradient_accumulation_steps
+    args.output_dir = (
+        f"{args.output_dir}/{args.model_name_or_path.split('/')[-1]}"
+        f"-{effective_bs}bs-{args.num_train_epochs}ep-{args.learning_rate}lr"
+    )
     if args.output_dir is not None:
         os.makedirs(args.output_dir, exist_ok=True)
 
