@@ -239,6 +239,12 @@ def parse_args():
         choices=["small", "base", "large", "huge"],
         help="Which ViT model version to use: small, base, large, or huge.",
     )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=1.0,
+        help="The alpha from the multimodal Vit Model. "
+    )
     args = parser.parse_args()
 
     # Sanity checks
@@ -374,7 +380,8 @@ def main():
         model = tfvit.multimodal_vit_small_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1
+            num_classes=1,
+            fusion_alpha=args.alpha
         )
         size = 224
     elif args.vit_version == "base":
@@ -382,7 +389,8 @@ def main():
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1,
-            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_base.pth'
+            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_base.pth',
+            fusion_alpha=args.alpha
         )
         size = 224
     elif args.vit_version == "large":
@@ -390,14 +398,16 @@ def main():
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1,
-            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_large.pth'
+            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_large.pth',
+            fusion_alpha=args.alpha
         )
         size = 224
     elif args.vit_version == "huge":
         model = tfvit.multimodal_vit_huge_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1
+            num_classes=1,
+            fusion_alpha=args.alpha
         )
         size = 224
     else:
