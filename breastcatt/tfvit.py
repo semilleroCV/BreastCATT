@@ -186,7 +186,8 @@ class MultiModalVisionTransformer(nn.Module):
 
         # Apply segmentation mask only if enabled
         if self.use_segmentation and self.segmentation_model is not None:
-            seg_mask = self.segmentation_model(pixel_values)
+            logits = self.segmentation_model(pixel_values)
+            seg_mask = (torch.sigmoid(logits) > 0.5).float() # Treshold set as 0.5
             pixel_values = pixel_values * seg_mask
 
         outcome = self.forward_features(pixel_values, text_embedding)
