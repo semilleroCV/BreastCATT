@@ -319,22 +319,36 @@ def multimodal_vit_base_patch16(**kwargs):
     - num_classes: Number of output classes (default: 1)
     - checkpoint_path: Path to pretrained weights (default: None)
     - map_location: Device to map checkpoint to (default: "cpu")
+    - embed_dim: Embedding dimension (default: 768)
+    - num_heads: Number of attention heads (default: 12)
+    - in_chans: Number of input channels (default: 1)
+    - cross_num_heads: Number of cross-attention heads (default: 8)
+    - fusion_alpha: Fusion alpha parameter (default: 1.0)
+    - depth: Transformer depth (default: 12)
     """
+    # Extract parameters from kwargs with defaults
     use_cross_attn = kwargs.pop('use_cross_attn', True)
     use_segmentation = kwargs.pop('use_segmentation', False)
     num_classes = kwargs.pop('num_classes', 1)
     checkpoint_path = kwargs.pop('checkpoint_path', None)
     map_location = kwargs.pop('map_location', "cpu")
+    embed_dim = kwargs.pop('embed_dim', 768)
+    num_heads = kwargs.pop('num_heads', 12)
+    in_chans = kwargs.pop('in_chans', 1)
+    cross_num_heads = kwargs.pop('cross_num_heads', 8)
+    fusion_alpha = kwargs.pop('fusion_alpha', 1.0)
+    depth = kwargs.pop('depth', 12)
     
     init_args = dict(
         patch_size=16,
-        in_chans=1,
-        embed_dim=kwargs.pop('embed_dim', 768),
-        depth=12,
-        num_heads=12,
+        in_chans=in_chans,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
         mlp_ratio=4,
         qkv_bias=True,
-        cross_num_heads=8,
+        cross_num_heads=cross_num_heads,
+        fusion_alpha=fusion_alpha,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
