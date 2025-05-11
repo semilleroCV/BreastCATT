@@ -10,3 +10,4 @@ ml_collections
 schedulefree
 notebook
 matplotlib
+torch >= 2.6
