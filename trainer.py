@@ -105,6 +105,12 @@ def parse_args():
         help="Percent to split off of train for validation",
     )
     parser.add_argument(
+        "--model_name_or_path",
+        type=str,
+        help="Path to pretrained model or model identifier from huggingface.co/models.",
+        default="google/vit-base-patch16-224-in21k",
+    )
+    parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
         default=8,
@@ -418,8 +424,8 @@ def main():
         )
         size = 224
     elif args.vit_version == "best":
-        config_path = hf_hub_download(repo_id=args.vit_repo_id, filename="config.json")
-        state_dict_path = hf_hub_download(repo_id=args.vit_repo_id, filename="pytorch_model.bin")
+        config_path = hf_hub_download(repo_id=args.model_name_or_path, filename="config.json")
+        state_dict_path = hf_hub_download(repo_id=args.model_name_or_path, filename="pytorch_model.bin")
         with open(config_path, "r") as f:
             init_args = json.load(f)
         model = tfvit.multimodal_vit_base_patch16(**init_args)
