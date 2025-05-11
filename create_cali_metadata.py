@@ -7,51 +7,20 @@ from pathlib import Path
 def convert_row_to_sentence(row):
     """
     Generate a descriptive sentence from a CSV metadata row.
-    Expected row fields: "Age(years)", "Weight (Kg)", "Height(cm)", "Temp(°C)", "Left", "Right".
+    Expected row fields: "Age(years)", "Weight (Kg)", "Height(cm)", "Temp(°C)".
     
-    The pathology codes for 'Left' and 'Right' are interpreted as follows:
-      PM: Malignant pathology for carcinoma stages – if found, this side is ignored in the text.
-      PB: Pathological findings such as collagenized stroma, fibroadenoma, cyst, adenosis, 
-          apocrine metaplasia, stromal fibrosis, epithelial hyperplasia, microcalcifications or nodule.
-      N: Normal stages.
-      
-    Returns a sentence summarizing the patient's demographic information and only the pathology
-    findings for the breast(s) where the code is not PM.
+    Returns a sentence summarizing the patient's demographic information.
     """
     age = row.get("Age(years)", "unknown")
     weight = row.get("Weight (Kg)", "unknown")
     height = row.get("Height(cm)", "unknown")
     temp = row.get("Temp(°C)", "unknown")
-    left_code = row.get("Left", "unknown")
-    right_code = row.get("Right", "unknown")
-    
-    # Mapping for pathology codes:
-    pathology_mapping = {
-        "PB": "findings such as collagenized stroma, fibroadenoma, cyst, adenosis, apocrine metaplasia, stromal fibrosis, epithelial hyperplasia, microcalcifications or nodule",
-        "N": "normal stages"
-    }
-    
-    # Build descriptions only for sides that are not PM.
-    descriptions = []
-    if left_code != "PM":
-        # If left_code is either PB or N, use the descriptive mapping; otherwise just show what it is.
-        left_description = pathology_mapping.get(left_code, left_code)
-        descriptions.append(f"The left breast presents {left_description}")
-    if right_code != "PM":
-        right_description = pathology_mapping.get(right_code, right_code)
-        descriptions.append(f"The right breast shows {right_description}")
     
     # Compose the final sentence.
-    demographic_text = (
+    sentence = (
         f"Patient is {age} years old, weighs {weight} kilograms, and is {height} centimeters tall. "
         f"Regarding the protocol, a body temperature of {temp} degrees Celsius."
     )
-    
-    if descriptions:
-        breasts_text = ". ".join(descriptions) + "."
-        sentence = f"{demographic_text} {breasts_text}"
-    else:
-        sentence = demographic_text
     
     return sentence
 
@@ -139,8 +108,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Update metadata CSV for the secondary dataset by generating descriptive text from CSV metadata."
     )
-    parser.add_argument("dataset_root", help="Path to the dataset root directory (containing train and test folders).")
-    parser.add_argument("metadata_csv", help="Path to the CSV metadata file (with base file names).")
+    parser.add_argument("--dataset_root", required=True, help="Path to the dataset root directory (containing train and test folders).")
+    parser.add_argument("--metadata_csv", required=True, help="Path to the CSV metadata file (with base file names).")
     parser.add_argument("--output", help="Output CSV file path. Defaults to 'metadata_updated.csv' in the dataset root.", default=None)
     
     args = parser.parse_args()
