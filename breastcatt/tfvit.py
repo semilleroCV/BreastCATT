@@ -309,18 +309,27 @@ def multimodal_vit_small_patch16(
     return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
 
 # Factory function for multi-modal Vision Transformer (base version).
-def multimodal_vit_base_patch16(
-    use_cross_attn: bool = True,
-    use_segmentation: bool = False,
-    num_classes: int = 1,
-    checkpoint_path: str = None,
-    map_location: str = "cpu",
-    **kwargs
-):
+def multimodal_vit_base_patch16(**kwargs):
+    """
+    Base ViT: Configure model parameters through kwargs.
+    
+    Key parameters (all optional with defaults):
+    - use_cross_attn: Whether to use cross-attention (default: True)
+    - use_segmentation: Whether to use segmentation (default: False)
+    - num_classes: Number of output classes (default: 1)
+    - checkpoint_path: Path to pretrained weights (default: None)
+    - map_location: Device to map checkpoint to (default: "cpu")
+    """
+    use_cross_attn = kwargs.pop('use_cross_attn', True)
+    use_segmentation = kwargs.pop('use_segmentation', False)
+    num_classes = kwargs.pop('num_classes', 1)
+    checkpoint_path = kwargs.pop('checkpoint_path', None)
+    map_location = kwargs.pop('map_location', "cpu")
+    
     init_args = dict(
         patch_size=16,
         in_chans=1,
-        embed_dim=768 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
+        embed_dim=kwargs.pop('embed_dim', 768),
         depth=12,
         num_heads=12,
         mlp_ratio=4,
