@@ -326,19 +326,22 @@ def multimodal_vit_base_patch16(**kwargs):
     - fusion_alpha: Fusion alpha parameter (default: 1.0)
     - depth: Transformer depth (default: 12)
     """
-    # Extract parameters from kwargs with defaults
-    use_cross_attn = kwargs.pop('use_cross_attn', True)
-    use_segmentation = kwargs.pop('use_segmentation', False)
-    num_classes = kwargs.pop('num_classes', 1)
-    checkpoint_path = kwargs.pop('checkpoint_path', None)
-    map_location = kwargs.pop('map_location', "cpu")
-    embed_dim = kwargs.pop('embed_dim', 768)
-    num_heads = kwargs.pop('num_heads', 12)
-    in_chans = kwargs.pop('in_chans', 1)
-    cross_num_heads = kwargs.pop('cross_num_heads', 8)
-    fusion_alpha = kwargs.pop('fusion_alpha', 1.0)
-    depth = kwargs.pop('depth', 12)
+    # Extract parameters from kwargs with defaults, but don't remove them from kwargs
+    use_cross_attn = kwargs.get('use_cross_attn', True)
+    use_segmentation = kwargs.get('use_segmentation', False)
+    num_classes = kwargs.get('num_classes', 1)
+    embed_dim = kwargs.get('embed_dim', 768)
+    num_heads = kwargs.get('num_heads', 12)
+    in_chans = kwargs.get('in_chans', 1)
+    cross_num_heads = kwargs.get('cross_num_heads', 8)
+    fusion_alpha = kwargs.get('fusion_alpha', 1.0)
+    depth = kwargs.get('depth', 12)
     
+    # Extract checkpoint related parameters (may be None)
+    checkpoint_path = kwargs.get('checkpoint_path', None)
+    map_location = kwargs.get('map_location', "cpu")
+    
+    # Create a clean init_args dict with all parameters
     init_args = dict(
         patch_size=16,
         in_chans=in_chans,
@@ -352,11 +355,19 @@ def multimodal_vit_base_patch16(**kwargs):
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
-        num_classes=num_classes,
-        **kwargs
+        num_classes=num_classes
     )
+    
+    # Add any remaining kwargs to handle additional parameters
+    # but exclude checkpoint_path and map_location to avoid duplicates
+    for k, v in kwargs.items():
+        if k not in init_args and k not in ['checkpoint_path', 'map_location']:
+            init_args[k] = v
 
-    return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
+    # Create model from init_args and checkpoint if provided
+    model = MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
+    
+    return model
 
 # Factory function for multi-modal Vision Transformer (large version).
 def multimodal_vit_large_patch16(
