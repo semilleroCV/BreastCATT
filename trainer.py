@@ -105,6 +105,12 @@ def parse_args():
         help="Percent to split off of train for validation",
     )
     parser.add_argument(
+        "--model_name_or_path",
+        type=str,
+        help="Path to pretrained model or model identifier from huggingface.co/models.",
+        default="google/vit-base-patch16-224-in21k",
+    )
+    parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
         default=8,
@@ -139,7 +145,7 @@ def parse_args():
     parser.add_argument(
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
     )
-    parser.add_argument("--output_dir", type=str, default=None, help="Where to store the final model.")
+    parser.add_argument("--output_dir", type=str, default="runs", help="Where to store the final model.")
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument("--push_to_hub", type=str2bool, nargs="?", const=False, default=False, help="Whether or not to push the model to the Hub.")
     parser.add_argument(
@@ -245,12 +251,6 @@ def parse_args():
         type=float,
         default=1.0,
         help="The alpha from the multimodal Vit Model. "
-    )
-    parser.add_argument(
-        "--repo_id",
-        type=str,
-        default="SemilleroCV/tfvit-base_text",
-        help="load the model from this repo id",
     )
     args = parser.parse_args()
 
@@ -418,8 +418,8 @@ def main():
         )
         size = 224
     elif args.vit_version == "best":
-        config_path = hf_hub_download(repo_id=args.vit_repo_id, filename="config.json")
-        state_dict_path = hf_hub_download(repo_id=args.vit_repo_id, filename="pytorch_model.bin")
+        config_path = hf_hub_download(repo_id=args.model_name_or_path, filename="config.json")
+        state_dict_path = hf_hub_download(repo_id=args.model_name_or_path, filename="pytorch_model.bin")
         with open(config_path, "r") as f:
             init_args = json.load(f)
         model = tfvit.multimodal_vit_base_patch16(**init_args)
