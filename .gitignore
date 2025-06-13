@@ -31,5 +31,4 @@ checkpoints
 transformers/
 thermal_parser/
 runs
-scripts
 wandb
