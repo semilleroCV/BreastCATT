@@ -29,10 +29,10 @@ from accelerate.logging import get_logger
 from accelerate.utils import set_seed
 from datasets import load_dataset
 from huggingface_hub import HfApi
+from huggingface_hub import hf_hub_download
 from torch.utils.data import DataLoader
 from torchmetrics.classification import BinarySpecificity
 from torchvision.transforms import (
-    CenterCrop,
     Compose,
     RandomHorizontalFlip,
     RandomResizedCrop,
@@ -102,6 +102,12 @@ def parse_args():
         type=float,
         default=0.15,
         help="Percent to split off of train for validation",
+    )
+    parser.add_argument(
+        "--model_name_or_path",
+        type=str,
+        help="Path to pretrained model or model identifier from huggingface.co/models.",
+        default="google/vit-base-patch16-224-in21k",
     )
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -236,14 +242,23 @@ def parse_args():
         "--vit_version",
         type=str,
         default="base",
-        choices=["small", "base", "large", "huge"],
-        help="Which ViT model version to use: small, base, large, or huge.",
+        choices=["small", "base", "large", "huge", "best"],
+        help="Which ViT model version to use: small, base, large, huge, or best (loads from HuggingFace Hub).",
     )
     parser.add_argument(
         "--alpha",
         type=float,
         default=1.0,
         help="The alpha from the multimodal Vit Model. "
+    )
+    parser.add_argument(
+        "--model_name_or_path",
+        type=str,
+        default=None,
+        help=(
+            "The model checkpoint for weights initialization. "
+            "Leave unset to train a model from scratch."
+        ),
     )
     args = parser.parse_args()
 
@@ -409,6 +424,15 @@ def main():
             num_classes=1,
             fusion_alpha=args.alpha
         )
+        size = 224
+    elif args.vit_version == "best":
+        config_path = hf_hub_download(repo_id=args.model_name_or_path, filename="config.json")
+        state_dict_path = hf_hub_download(repo_id=args.model_name_or_path, filename="pytorch_model.bin")
+        with open(config_path, "r") as f:
+            init_args = json.load(f)
+        model = tfvit.multimodal_vit_base_patch16(**init_args)
+        state_dict = torch.load(state_dict_path, map_location="cpu")
+        model.load_state_dict(state_dict)
         size = 224
     else:
         raise ValueError(f"Unknown vit_version: {args.vit_version}")
