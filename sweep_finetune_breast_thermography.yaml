@@ -3,18 +3,18 @@ metric:
   goal: maximize
   name: sensitivity
 parameters:
-  model_name_or_path:
-    distribution: categorical
-    values:
-      - SemilleroCV/tfvit-base_text
-  vit_version:
-    distribution: categorical
-    values:
-      - best
   # max_train_samples: # for debug purposes
   #  value: 100
   #max_eval_samples: # for debug purposes
   #  value: 50
+  use_cross_attn:
+    value: true
+  use_segmentation:
+    value: true
+  vit_version:
+    distribution: categorical
+    values:
+      - base
   dataset_name:
     distribution: categorical
     values:
@@ -36,4 +36,4 @@ parameters:
       - 4
       - 8
       - 16
-program: trainer.py
+program: train.py
