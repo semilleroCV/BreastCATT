@@ -197,8 +197,9 @@ Classification results on Breast Thermography dataset:
 
 Pre-trained models are available on HuggingFace Hub:
 
-- [BreastCATT-Base](https://huggingface.co/SemilleroCV/tfvit-base_text)
-- [BreastCATT-Large](https://huggingface.co/SemilleroCV/breastcatt-large)
+- [BreastCATT-Base](https://huggingface.co/SemilleroCV/tfvit-base)
+- [BreastCATT-Base (text)](https://huggingface.co/SemilleroCV/tfvit-base_text)
+- [BreastCATT-Base (text and seg)](https://huggingface.co/SemilleroCV/tfvit-base_seg_text)
 
 ## Notebooks
 
