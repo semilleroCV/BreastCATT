@@ -242,23 +242,14 @@ def parse_args():
         "--vit_version",
         type=str,
         default="base",
-        choices=["small", "base", "large", "huge", "best"],
-        help="Which ViT model version to use: small, base, large, huge, or best (loads from HuggingFace Hub).",
+        choices=["small", "base", "large", "pretrained"],
+        help="Which ViT model version to use: small, base, large, or pretrained (loads from HuggingFace Hub).",
     )
     parser.add_argument(
         "--alpha",
         type=float,
         default=1.0,
         help="The alpha from the multimodal Vit Model. "
-    )
-    parser.add_argument(
-        "--model_name_or_path",
-        type=str,
-        default=None,
-        help=(
-            "The model checkpoint for weights initialization. "
-            "Leave unset to train a model from scratch."
-        ),
     )
     args = parser.parse_args()
 
@@ -404,7 +395,6 @@ def main():
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1,
-            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_base.pth',
             fusion_alpha=args.alpha
         )
         size = 224
@@ -413,19 +403,10 @@ def main():
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
             num_classes=1,
-            checkpoint_path='checkpoints/fvit/mae_pretrain_vit_large.pth',
             fusion_alpha=args.alpha
         )
         size = 224
-    elif args.vit_version == "huge":
-        model = tfvit.multimodal_vit_huge_patch16(
-            use_cross_attn=args.use_cross_attn,
-            use_segmentation=args.use_segmentation,
-            num_classes=1,
-            fusion_alpha=args.alpha
-        )
-        size = 224
-    elif args.vit_version == "best":
+    elif args.vit_version == "pretrained":
         config_path = hf_hub_download(repo_id=args.model_name_or_path, filename="config.json")
         state_dict_path = hf_hub_download(repo_id=args.model_name_or_path, filename="pytorch_model.bin")
         with open(config_path, "r") as f:
