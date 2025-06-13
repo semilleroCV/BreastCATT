@@ -3,7 +3,7 @@
 # Multimodal Vision-Language Transformer for Thermography Breast Cancer Classification
 
 <a href="#">
-  <img src="https://github.com/user-attachments/assets/be7b8a04-427d-44a1-8d96-f4223784c29a" alt="BreastCATT" style="max-width: 100%; height: 300px;">
+  <img src="assets/figures/ColCACI-2025.png" alt="BreastCATT" style="max-width: 100%; height: 300px;">
 </a>
 
 [Guillermo Pinto](https://guillepinto.github.io/), [Julián León](https://www.linkedin.com/in/nobodys-stache/), [Brayan Quintero](https://github.com/BrayanQuintero123), [Dana Villamizar](https://github.com/DanaVillamizar) and [Hoover Rueda-Chacón](hfarueda.com)
@@ -18,9 +18,7 @@ Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 
 </br>
 
-<p align="center"> <img src="assets/figures/architecture.png" alt="BreastCATT Architecture" height='400'> </p>
-
-**Overview:** BreastCATT introduces a multimodal vision-language transformer that combines thermal imaging analysis with structured clinical metadata. Our approach generates descriptive text prompts from patient-specific variables (age, symptoms, medical history), which are embedded and fused with image tokens via cross-attention mechanisms. This integration enables robust breast cancer classification from single thermal images, regardless of viewing angle, offering a flexible solution for diverse clinical scenarios.
+<p align="center"> <img src="assets/figures/framework.png" alt="BreastCATT Architecture" height='400'> </p>
 
 ## Key Features
 
@@ -37,13 +35,10 @@ Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 Our experiments utilize two thermal imaging datasets for comprehensive evaluation:
 
 ### DMR-IR Dataset
-The DMR-IR (Database for Research Mastology with Infrared Image) dataset contains thermal images for breast cancer detection. 
-
-This dataset includes structured clinical metadata (patient age, symptoms, medical history) which is converted into descriptive text prompts for multimodal fusion.
+The DMR-IR (Database for Research Mastology with Infrared Image) dataset contains thermal images for breast cancer detection. This dataset includes structured clinical metadata (patient age, symptoms, medical history) which is converted into descriptive text prompts for multimodal fusion. Original dataset was obtained from [Departamento de Ciência da Computação Universidade Federal Fluminense](https://visual.ic.uff.br/dmi/) and our version is available [here](https://huggingface.co/datasets/SemilleroCV/DMR-IR)
 
 ### Breast Thermography Dataset
-Additional validation dataset containing thermal breast images with diverse viewing angles and patient demographics, enabling robust evaluation of model generalization capabilities.
-
+Additional validation dataset containing thermal breast images with diverse viewing angles and patient demographics, enabling robust evaluation of model generalization capabilities. This dataset is available [here](https://huggingface.co/datasets/SemilleroCV/BreastThermography)
 
 
 ## Architecture
@@ -53,8 +48,10 @@ BreastCATT implements a sophisticated multimodal vision transformer with the fol
 - **Vision Encoder**: Custom ViT implementation with configurable depths and attention heads
 - **Language Model**: GatorTron-based text processing for multimodal fusion
 - **Cross-Attention**: Facilitates interaction between visual and textual features
-- **Segmentation Module**: Optional segmentation head for spatial analysis
+- **Segmentation Module**: Optional segmentation branch for spatial analysis
 - **Fusion Layer**: Alpha-weighted combination of modalities
+
+<p align="center"> <img src="assets/figures/architecture.png" alt="BreastCATT Architecture" height='400'> </p>
 
 ## Installation
 
@@ -86,7 +83,6 @@ pip install -r requirements.txt
 4. Download pre-trained checkpoints:
 ```bash
 # MAE pre-trained weights will be downloaded automatically
-# Or manually download from: checkpoints/fvit/
 ```
 
 ## Usage
@@ -113,7 +109,7 @@ Fine-tune from HuggingFace Hub models:
 ```bash
 python train.py \
     --vit_version "best" \
-    --model_name_or_path "SemilleroCV/breastcatt-base" \
+    --model_name_or_path "SemilleroCV/tfvit-base_text" \
     --dataset_name "SemilleroCV/DMR-IR" \
     --num_train_epochs 5 \
     --learning_rate 2e-5
@@ -140,7 +136,6 @@ Choose from different model sizes:
 | Small | ~22M | 384 | 6 | 12 |
 | Base | ~86M | 768 | 12 | 12 |
 | Large | ~307M | 1024 | 16 | 24 |
-| Huge | ~632M | 1280 | 16 | 32 |
 
 ### Configuration Options
 
@@ -162,17 +157,6 @@ We evaluate models using comprehensive metrics:
 - **Precision**: Positive predictive value
 - **Recall (Sensitivity)**: True positive rate
 - **Specificity**: True negative rate
-
-### Cross-Validation
-
-Implement robust evaluation with k-fold cross-validation:
-
-```bash
-# Run 7-fold cross-validation
-python scripts/run_kfold_validation.py \
-    --n_splits 7 \
-    --model_config "config/breastcatt_base.json"
-```
 
 ## Results
 
@@ -213,9 +197,8 @@ Classification results on Breast Thermography dataset:
 
 Pre-trained models are available on HuggingFace Hub:
 
-- [BreastCATT-Base](https://huggingface.co/SemilleroCV/breastcatt-base)
+- [BreastCATT-Base](https://huggingface.co/SemilleroCV/tfvit-base_text)
 - [BreastCATT-Large](https://huggingface.co/SemilleroCV/breastcatt-large)
-- [Fine-tuned ViT](https://huggingface.co/SemilleroCV/vit-base-thermal-breast)
 
 ## Notebooks
 
@@ -241,7 +224,7 @@ If you find our work useful in your research, please cite:
 
 ## Acknowledgements
 
-We thank the researchers who provided the DMR-IR dataset and the HuggingFace team for their transformers library. Special recognition to the MAE authors for pre-trained vision transformer weights.
+We thank the researchers who provided the DMR-IR and Breast Thermography datasets and the HuggingFace team for their transformers library. Special recognition to the MAE authors for pre-trained vision transformer weights.
 
 ## License
 
@@ -251,4 +234,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions and collaborations:
 - **Guillermo Pinto**: guillermo2210069@correo.uis.edu.co
-- **Research Group**: [Hands-on Computer Vision](https://github.com/semilleroCV)
+- **Research Group**: [Hands-on Computer Vision](semillerocv.github.io)
