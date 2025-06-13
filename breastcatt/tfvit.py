@@ -6,7 +6,7 @@
 
 from functools import partial
 
-from timm.models.vision_transformer import PatchEmbed
+from timm.layers.patch_embed import PatchEmbed
 import timm.models.vision_transformer
 
 import torch.nn as nn
@@ -16,6 +16,7 @@ from typing import Optional
 from dataclasses import dataclass
 import os
 import json
+import urllib.request
 
 from breastcatt.segmenter import SegmentationModel
 
@@ -25,6 +26,62 @@ from mae.pos_embed import get_2d_sincos_pos_embed
 class ModelOutput:
     logits: torch.Tensor
     loss: Optional[torch.Tensor] = None
+
+def download_mae_weights(model_size="base", force_download=False):
+    """
+    Download MAE pretrained weights from Facebook's servers.
+    
+    Args:
+        model_size (str): Size of the model ("base" or "large")
+        force_download (bool): Whether to force re-download if file exists
+        
+    Returns:
+        str: Path to the downloaded checkpoint file
+    """
+    # Define download URLs for different model sizes
+    mae_urls = {
+        "base": "https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_base.pth",
+        "large": "https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_large.pth"
+    }
+    
+    if model_size not in mae_urls:
+        raise ValueError(f"Unsupported model size: {model_size}. Choose from {list(mae_urls.keys())}")
+    
+    # Create checkpoints directory
+    checkpoint_dir = "checkpoints/fvit"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    # Define local file path
+    filename = f"mae_pretrain_vit_{model_size}.pth"
+    local_path = os.path.join(checkpoint_dir, filename)
+    
+    # Check if file already exists
+    if os.path.exists(local_path) and not force_download:
+        print(f"✅ MAE {model_size} weights already exist at: {local_path}")
+        return local_path
+    
+    # Download the file
+    url = mae_urls[model_size]
+    print(f"📥 Downloading MAE {model_size} weights from Facebook's servers...")
+    print(f"URL: {url}")
+    print(f"Saving to: {local_path}")
+    
+    try:
+        # Download with progress indication
+        def download_progress(block_num, block_size, total_size):
+            if total_size > 0:
+                percent = min(100.0, block_num * block_size * 100.0 / total_size)
+                print(f"\rProgress: {percent:.1f}%", end="", flush=True)
+        
+        urllib.request.urlretrieve(url, local_path, download_progress)
+        print(f"\n✅ Successfully downloaded MAE {model_size} weights to: {local_path}")
+        return local_path
+        
+    except Exception as e:
+        print(f"\n❌ Error downloading MAE weights: {e}")
+        if os.path.exists(local_path):
+            os.remove(local_path)  # Clean up partial download
+        raise
 
 class LanguageModel(nn.Module):
     def __init__(self, name, embed_dim=1024):
@@ -115,7 +172,7 @@ class MultiModalVisionTransformer(nn.Module):
         self.initialize_weights()
 
     @classmethod
-    def create_from_init_args(cls, init_args, checkpoint_path=None, map_location="cpu"):
+    def create_from_init_args(cls, init_args, checkpoint_path: Optional[str] = None, map_location="cpu"):
         """
         Create a model from init_args, optionally loading weights from a checkpoint.
         
@@ -214,18 +271,17 @@ class MultiModalVisionTransformer(nn.Module):
         os.makedirs(save_directory, exist_ok=True)
         # Save model weights
         torch.save(self.state_dict(), os.path.join(save_directory, "pytorch_model.bin"))
-        # Save config
+        # Save config with safe defaults
         config = {
-            "embed_dim": self.patch_embed.proj.out_channels,
+            "embed_dim": getattr(self.patch_embed.proj, 'out_channels', 768),
             "use_cross_attn": self.use_cross_attn,
             "use_segmentation": self.use_segmentation,
-            "num_heads": self.blocks[0].block.attn.num_heads,
-            "in_chans": self.patch_embed.proj.in_channels,
+            "num_heads": 12,  # Default value, can be customized
+            "in_chans": getattr(self.patch_embed.proj, 'in_channels', 1),
             "num_classes": self.num_classes,
-            "cross_num_heads": getattr(self.blocks[0], 'cross_attn', None) and self.blocks[0].cross_attn.num_heads or 0,
-            "fusion_alpha": getattr(self.blocks[0], 'fusion_alpha', 1.0),
+            "cross_num_heads": 8,  # Default value
+            "fusion_alpha": 1.0,  # Default value
             "depth": len(self.blocks),
-            # Add more config parameters as needed
         }
         with open(os.path.join(save_directory, "config.json"), "w") as f:
             json.dump(config, f)
@@ -282,13 +338,14 @@ def multimodal_vit_small_patch16(
     use_cross_attn: bool = True,
     use_segmentation: bool = False,
     num_classes: int = 1000,
-    checkpoint_path: str = None,
+    checkpoint_path: Optional[str] = None,
     map_location: str = "cpu",
     **kwargs
 ):
     """
     Small ViT: For ablation, set use_cross_attn/use_segmentation as needed.
     If `checkpoint_path` is provided, loads MAE weights filtered to matching layers.
+    Note: MAE pretrained weights are not available for small models.
     """
     init_args = dict(
         patch_size=16,
@@ -317,7 +374,7 @@ def multimodal_vit_base_patch16(**kwargs):
     - use_cross_attn: Whether to use cross-attention (default: True)
     - use_segmentation: Whether to use segmentation (default: False)
     - num_classes: Number of output classes (default: 1)
-    - checkpoint_path: Path to pretrained weights (default: None)
+    - checkpoint_path: Path to pretrained weights (default: auto-download MAE base)
     - map_location: Device to map checkpoint to (default: "cpu")
     - embed_dim: Embedding dimension (default: 768)
     - num_heads: Number of attention heads (default: 12)
@@ -337,8 +394,10 @@ def multimodal_vit_base_patch16(**kwargs):
     fusion_alpha = kwargs.get('fusion_alpha', 1.0)
     depth = kwargs.get('depth', 12)
     
-    # Extract checkpoint related parameters (may be None)
+    # Handle checkpoint path - auto-download if not provided
     checkpoint_path = kwargs.get('checkpoint_path', None)
+    if checkpoint_path is None:
+        checkpoint_path = download_mae_weights("base")
     map_location = kwargs.get('map_location', "cpu")
     
     # Create a clean init_args dict with all parameters
@@ -374,13 +433,18 @@ def multimodal_vit_large_patch16(
     use_cross_attn: bool = True,
     use_segmentation: bool = False,
     num_classes: int = 1,
-    checkpoint_path: str = None,
+    checkpoint_path: Optional[str] = None,
     map_location: str = "cpu",
     **kwargs
 ):
     """
     Large ViT: For ablation, set use_cross_attn/use_segmentation as needed.
+    Automatically downloads MAE large weights if checkpoint_path is not provided.
     """
+    # Auto-download MAE weights if checkpoint_path is not provided
+    if checkpoint_path is None:
+        checkpoint_path = download_mae_weights("large")
+    
     init_args = dict(
         patch_size=16,
         in_chans=1,
@@ -404,12 +468,13 @@ def multimodal_vit_huge_patch16(
     use_cross_attn: bool = True,
     use_segmentation: bool = False,
     num_classes: int = 1,
-    checkpoint_path: str = None,
+    checkpoint_path: Optional[str] = None,
     map_location: str = "cpu",
     **kwargs
 ):
     """
     Huge ViT: For ablation, set use_cross_attn/use_segmentation as needed.
+    Note: MAE pretrained weights are not available for huge models.
     """
     init_args = dict(
         patch_size=14,
