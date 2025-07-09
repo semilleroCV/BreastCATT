@@ -16,7 +16,9 @@ from typing import Optional
 from dataclasses import dataclass
 import os
 import json
+from huggingface_hub import hf_hub_download
 import urllib.request
+from huggingface_hub import hf_hub_download
 
 from breastcatt.segmenter import SegmentationModel
 
@@ -79,6 +81,45 @@ def download_mae_weights(model_size="base", force_download=False):
         
     except Exception as e:
         print(f"\n❌ Error downloading MAE weights: {e}")
+        if os.path.exists(local_path):
+            os.remove(local_path)  # Clean up partial download
+        raise
+    
+def download_transunet_weights(force_download=False):
+    """
+    Downloads TransUNet weights from the Hugging Face Hub.
+
+    Args:
+        force_download (bool): Whether to force re-download if file exists.
+
+    Returns:
+        str: Path to the downloaded checkpoint file.
+    """
+    repo_id = "SemilleroCV/transunet-breast-cancer"
+    filename = "lucky-sweep-6_0.4937.pth"
+    checkpoint_dir = "checkpoints/segmentation"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    local_path = os.path.join(checkpoint_dir, filename)
+
+    if os.path.exists(local_path) and not force_download:
+        print(f"✅ TransUNet weights already exist at: {local_path}")
+        return local_path
+
+    print(f"📥 Downloading TransUNet weights from Hugging Face Hub ({repo_id})...")
+    
+    try:
+        # hf_hub_download will handle caching and progress bars automatically
+        downloaded_path = hf_hub_download(
+            repo_id=repo_id,
+            filename=filename,
+            local_dir=checkpoint_dir,
+        )
+        print(f"\n✅ Successfully downloaded TransUNet weights to: {downloaded_path}")
+        return downloaded_path
+        
+    except Exception as e:
+        print(f"\n❌ Error downloading TransUNet weights: {e}")
         if os.path.exists(local_path):
             os.remove(local_path)  # Clean up partial download
         raise
@@ -150,11 +191,14 @@ class MultiModalVisionTransformer(nn.Module):
 
         # Segmentation model for ROI extraction (only if enabled)
         self.use_segmentation = use_segmentation
-        self.segmentation_model = SegmentationModel(
-            img_size=224, n_skip=3, num_classes=1,
-            dir_model='checkpoints/segmentation/lucky-sweep-6_0.4937.pth',
-            device=torch.device('cpu')
-        ) if use_segmentation else None
+        self.segmentation_model = None
+        if use_segmentation:
+          segmentation_weights_path = download_transunet_weights()
+          self.segmentation_model = SegmentationModel(
+              img_size=224, n_skip=3, num_classes=1,
+              dir_model=segmentation_weights_path,
+              device=torch.device('cpu')
+          )
 
         # Transformer blocks
         self.blocks = nn.ModuleList([
@@ -184,7 +228,8 @@ class MultiModalVisionTransformer(nn.Module):
         Returns:
             A MultiModalVisionTransformer model
         """
-        if checkpoint_path:
+
+        if checkpoint_path: # load weights from MAE
             return cls.from_pretrained(
                 checkpoint_path=checkpoint_path,
                 map_location=map_location,
@@ -334,34 +379,59 @@ class MultiModalVisionTransformer(nn.Module):
 
 
 # Factory function for multi-modal Vision Transformer (small version).
-def multimodal_vit_small_patch16(
-    use_cross_attn: bool = True,
-    use_segmentation: bool = False,
-    num_classes: int = 1000,
-    checkpoint_path: Optional[str] = None,
-    map_location: str = "cpu",
-    **kwargs
-):
+def multimodal_vit_small_patch16(**kwargs):
     """
-    Small ViT: For ablation, set use_cross_attn/use_segmentation as needed.
-    If `checkpoint_path` is provided, loads MAE weights filtered to matching layers.
-    Note: MAE pretrained weights are not available for small models.
+    Small ViT: Configure model parameters through kwargs.
+    
+    Key parameters (all optional with defaults):
+    - use_cross_attn: Whether to use cross-attention (default: True)
+    - use_segmentation: Whether to use segmentation (default: False)
+    - num_classes: Number of output classes (default: 1)
+    - checkpoint_path: Path to pretrained weights (default: None, MAE small not available)
+    - map_location: Device to map checkpoint to (default: "cpu")
+    - embed_dim: Embedding dimension (default: 384)
+    - num_heads: Number of attention heads (default: 6)
+    - in_chans: Number of input channels (default: 1)
+    - cross_num_heads: Number of cross-attention heads (default: 4)
+    - fusion_alpha: Fusion alpha parameter (default: 1.0)
+    - depth: Transformer depth (default: 4)
     """
+    # Extract parameters from kwargs with defaults
+    use_cross_attn = kwargs.get('use_cross_attn', True)
+    use_segmentation = kwargs.get('use_segmentation', False)
+    num_classes = kwargs.get('num_classes', 1)
+    embed_dim = kwargs.get('embed_dim', 384)
+    num_heads = kwargs.get('num_heads', 6)
+    in_chans = kwargs.get('in_chans', 1)
+    cross_num_heads = kwargs.get('cross_num_heads', 4)
+    fusion_alpha = kwargs.get('fusion_alpha', 1.0)
+    depth = kwargs.get('depth', 4)
+    
+    # Handle checkpoint path
+    checkpoint_path = kwargs.get('checkpoint_path', None)
+    map_location = kwargs.get('map_location', "cpu")
+
+    # Create a clean init_args dict
     init_args = dict(
         patch_size=16,
-        in_chans=1,
-        embed_dim=384 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
-        depth=4,
-        num_heads=6,
+        in_chans=in_chans,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
         mlp_ratio=4,
         qkv_bias=True,
-        cross_num_heads=4,
+        cross_num_heads=cross_num_heads,
+        fusion_alpha=fusion_alpha,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
-        num_classes=num_classes,
-        **kwargs
+        num_classes=num_classes
     )
+
+    # Add any remaining kwargs
+    for k, v in kwargs.items():
+        if k not in init_args and k not in ['checkpoint_path', 'map_location']:
+            init_args[k] = v
 
     return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
 
@@ -399,7 +469,7 @@ def multimodal_vit_base_patch16(**kwargs):
     if checkpoint_path is None:
         checkpoint_path = download_mae_weights("base")
     map_location = kwargs.get('map_location', "cpu")
-    
+
     # Create a clean init_args dict with all parameters
     init_args = dict(
         patch_size=16,
@@ -429,67 +499,60 @@ def multimodal_vit_base_patch16(**kwargs):
     return model
 
 # Factory function for multi-modal Vision Transformer (large version).
-def multimodal_vit_large_patch16(
-    use_cross_attn: bool = True,
-    use_segmentation: bool = False,
-    num_classes: int = 1,
-    checkpoint_path: Optional[str] = None,
-    map_location: str = "cpu",
-    **kwargs
-):
+def multimodal_vit_large_patch16(**kwargs):
     """
-    Large ViT: For ablation, set use_cross_attn/use_segmentation as needed.
-    Automatically downloads MAE large weights if checkpoint_path is not provided.
+    Large ViT: Configure model parameters through kwargs.
+    
+    Key parameters (all optional with defaults):
+    - use_cross_attn: Whether to use cross-attention (default: True)
+    - use_segmentation: Whether to use segmentation (default: False)
+    - num_classes: Number of output classes (default: 1)
+    - checkpoint_path: Path to pretrained weights (default: auto-download MAE large)
+    - map_location: Device to map checkpoint to (default: "cpu")
+    - embed_dim: Embedding dimension (default: 1024)
+    - num_heads: Number of attention heads (default: 16)
+    - in_chans: Number of input channels (default: 1)
+    - cross_num_heads: Number of cross-attention heads (default: 16)
+    - fusion_alpha: Fusion alpha parameter (default: 1.0)
+    - depth: Transformer depth (default: 24)
     """
-    # Auto-download MAE weights if checkpoint_path is not provided
+    # Extract parameters from kwargs with defaults
+    use_cross_attn = kwargs.get('use_cross_attn', True)
+    use_segmentation = kwargs.get('use_segmentation', False)
+    num_classes = kwargs.get('num_classes', 1)
+    embed_dim = kwargs.get('embed_dim', 1024)
+    num_heads = kwargs.get('num_heads', 16)
+    in_chans = kwargs.get('in_chans', 1)
+    cross_num_heads = kwargs.get('cross_num_heads', 16)
+    fusion_alpha = kwargs.get('fusion_alpha', 1.0)
+    depth = kwargs.get('depth', 24)
+
+    # Handle checkpoint path - auto-download if not provided
+    checkpoint_path = kwargs.get('checkpoint_path', None)
     if checkpoint_path is None:
         checkpoint_path = download_mae_weights("large")
+    map_location = kwargs.get('map_location', "cpu")
     
     init_args = dict(
         patch_size=16,
-        in_chans=1,
-        embed_dim=1024 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
-        depth=24,
-        num_heads=16,
+        in_chans=in_chans,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
         mlp_ratio=4,
         qkv_bias=True,
-        cross_num_heads=16,
+        cross_num_heads=cross_num_heads,
+        fusion_alpha=fusion_alpha,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_cross_attn=use_cross_attn,
         use_segmentation=use_segmentation,
-        num_classes=num_classes,
-        **kwargs
+        num_classes=num_classes
     )
+
+    # Add any remaining kwargs
+    for k, v in kwargs.items():
+        if k not in init_args and k not in ['checkpoint_path', 'map_location']:
+            init_args[k] = v
 
     return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
 
-# Factory function for multi-modal Vision Transformer (huge version).
-def multimodal_vit_huge_patch16(
-    use_cross_attn: bool = True,
-    use_segmentation: bool = False,
-    num_classes: int = 1,
-    checkpoint_path: Optional[str] = None,
-    map_location: str = "cpu",
-    **kwargs
-):
-    """
-    Huge ViT: For ablation, set use_cross_attn/use_segmentation as needed.
-    Note: MAE pretrained weights are not available for huge models.
-    """
-    init_args = dict(
-        patch_size=14,
-        in_chans=1,
-        embed_dim=1280 if 'embed_dim' not in kwargs else kwargs['embed_dim'],
-        depth=32,
-        num_heads=16,
-        mlp_ratio=4,
-        qkv_bias=True,
-        cross_num_heads=16,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6),
-        use_cross_attn=use_cross_attn,
-        use_segmentation=use_segmentation,
-        num_classes=num_classes,
-        **kwargs
-    )
-    
-    return MultiModalVisionTransformer.create_from_init_args(init_args, checkpoint_path, map_location)
