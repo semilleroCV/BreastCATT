@@ -78,7 +78,6 @@ def parse_args():
         ),
     )
     parser.add_argument("--train_dir", type=str, default=None, help="A folder containing the training data.")
-    parser.add_argument("--validation_dir", type=str, default=None, help="A folder containing the validation data.")
     parser.add_argument(
         "--max_train_samples",
         type=int,
@@ -96,12 +95,6 @@ def parse_args():
             "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
             "value if set."
         ),
-    )
-    parser.add_argument(
-        "--train_val_split",
-        type=float,
-        default=0.15,
-        help="Percent to split off of train for validation",
     )
     parser.add_argument(
         "--model_name_or_path",
@@ -254,7 +247,7 @@ def parse_args():
     args = parser.parse_args()
 
     # Sanity checks
-    if args.dataset_name is None and args.train_dir is None and args.validation_dir is None:
+    if args.dataset_name is None and args.train_dir is None:
         raise ValueError("Need either a dataset name or a training/validation folder.")
 
     if args.push_to_hub or args.with_tracking:
@@ -342,8 +335,6 @@ def main():
         data_files = {}
         if args.train_dir is not None:
             data_files["train"] = os.path.join(args.train_dir, "**")
-        if args.validation_dir is not None:
-            data_files["validation"] = os.path.join(args.validation_dir, "**")
         dataset = load_dataset(
             "imagefolder",
             data_files=data_files,
@@ -351,7 +342,7 @@ def main():
         # See more about loading custom images at
         # https://huggingface.co/docs/datasets/v2.0.0/en/image_process#imagefolder.
 
-    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["validation"].column_names
+    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["test"].column_names
     if args.image_column_name not in dataset_column_names:
         raise ValueError(
             f"--image_column_name {args.image_column_name} not found in dataset '{args.dataset_name}'. "
@@ -365,13 +356,6 @@ def main():
             f"{', '.join(dataset_column_names)}."
         )
 
-    # If we don't have a validation split, split off a percentage of train as validation.
-    args.train_val_split = None if "validation" in dataset.keys() else args.train_val_split
-    if isinstance(args.train_val_split, float) and args.train_val_split > 0.0:
-        split = dataset["train"].train_test_split(args.train_val_split)
-        dataset["train"] = split["train"]
-        dataset["validation"] = split["test"]
-
     # Prepare label mappings.
     # We'll include these in the model's config to get human readable labels in the Inference API.
     labels = dataset["train"].features[args.label_column_name].names
@@ -379,7 +363,7 @@ def main():
     id2label = {str(i): label for i, label in enumerate(labels)}
 
     # Load pretrained model and image processor
-    #
+
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
     if args.vit_version == "small":
@@ -389,7 +373,6 @@ def main():
             num_classes=1,
             fusion_alpha=args.alpha
         )
-        size = 224
     elif args.vit_version == "base":
         model = tfvit.multimodal_vit_base_patch16(
             use_cross_attn=args.use_cross_attn,
@@ -397,7 +380,6 @@ def main():
             num_classes=1,
             fusion_alpha=args.alpha
         )
-        size = 224
     elif args.vit_version == "large":
         model = tfvit.multimodal_vit_large_patch16(
             use_cross_attn=args.use_cross_attn,
@@ -405,7 +387,6 @@ def main():
             num_classes=1,
             fusion_alpha=args.alpha
         )
-        size = 224
     elif args.vit_version == "pretrained":
         config_path = hf_hub_download(repo_id=args.model_name_or_path, filename="config.json")
         state_dict_path = hf_hub_download(repo_id=args.model_name_or_path, filename="pytorch_model.bin")
@@ -414,7 +395,6 @@ def main():
         model = tfvit.multimodal_vit_base_patch16(**init_args)
         state_dict = torch.load(state_dict_path, map_location="cpu")
         model.load_state_dict(state_dict)
-        size = 224
     else:
         raise ValueError(f"Unknown vit_version: {args.vit_version}")
         
@@ -442,7 +422,7 @@ def main():
         ]
         return example_batch
 
-    def preprocess_val(example_batch):
+    def preprocess_test(example_batch):
         """Apply _val_transforms across a batch."""
         example_batch["pixel_values"] = [
             val_transforms(image) for image in example_batch[args.image_column_name]
@@ -455,9 +435,9 @@ def main():
         # Set the training transforms
         train_dataset = dataset["train"].with_transform(preprocess_train)
         if args.max_eval_samples is not None:
-            dataset["validation"] = dataset["validation"].shuffle(seed=args.seed).select(range(args.max_eval_samples))
+            dataset["test"] = dataset["test"].shuffle(seed=args.seed).select(range(args.max_eval_samples))
         # Set the validation transforms
-        eval_dataset = dataset["validation"].with_transform(preprocess_val)
+        test_dataset = dataset["test"].with_transform(preprocess_test)
 
     # DataLoaders creation:
     def collate_fn(examples):
@@ -469,7 +449,7 @@ def main():
     train_dataloader = DataLoader(
         train_dataset, shuffle=True, collate_fn=collate_fn, batch_size=args.per_device_train_batch_size
     )
-    eval_dataloader = DataLoader(eval_dataset, collate_fn=collate_fn, batch_size=args.per_device_eval_batch_size)
+    test_dataloader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=args.per_device_eval_batch_size)
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -494,8 +474,8 @@ def main():
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
         overrode_max_train_steps = True
 
-    model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
-        model, optimizer, train_dataloader, eval_dataloader
+    model, optimizer, train_dataloader, test_dataloader = accelerator.prepare(
+        model, optimizer, train_dataloader, test_dataloader
     )
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
@@ -625,7 +605,7 @@ def main():
         optimizer.eval()
         # Reset specificity metric
         specificity_metric.reset()
-        for step, batch in enumerate(eval_dataloader):
+        for step, batch in enumerate(test_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
             logits = outputs.logits
