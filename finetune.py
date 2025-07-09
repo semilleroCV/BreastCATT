@@ -80,7 +80,6 @@ def parse_args():
         ),
     )
     parser.add_argument("--train_dir", type=str, default=None, help="A folder containing the training data.")
-    parser.add_argument("--validation_dir", type=str, default=None, help="A folder containing the validation data.")
     parser.add_argument(
         "--max_train_samples",
         type=int,
@@ -98,12 +97,6 @@ def parse_args():
             "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
             "value if set."
         ),
-    )
-    parser.add_argument(
-        "--train_val_split",
-        type=float,
-        default=0.15,
-        help="Percent to split off of train for validation",
     )
     parser.add_argument(
         "--model_name_or_path",
@@ -130,7 +123,7 @@ def parse_args():
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay to use.")
-    parser.add_argument("--num_train_epochs", type=int, default=3, help="Total number of training epochs to perform.")
+    parser.add_argument("--num_train_epochs", type=int, default=1, help="Total number of training epochs to perform.")
     parser.add_argument(
         "--max_train_steps",
         type=int,
@@ -147,7 +140,7 @@ def parse_args():
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
     )
     parser.add_argument("--output_dir", type=str, default="runs", help="Where to store the final model.")
-    parser.add_argument("--seed", type=int, default=1757, help="A seed for reproducible training.")
+    parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument("--push_to_hub", type=str2bool, nargs="?", const=False, default=False, help="Whether or not to push the model to the Hub.")
     parser.add_argument(
         "--hub_model_id", type=str, help="The name of the repository to keep in sync with the local `output_dir`."
@@ -227,7 +220,7 @@ def parse_args():
     args = parser.parse_args()
 
     # Sanity checks
-    if args.dataset_name is None and args.train_dir is None and args.validation_dir is None:
+    if args.dataset_name is None and args.train_dir is None:
         raise ValueError("Need either a dataset name or a training/validation folder.")
 
     if args.push_to_hub or args.with_tracking:
@@ -315,8 +308,6 @@ def main():
         data_files = {}
         if args.train_dir is not None:
             data_files["train"] = os.path.join(args.train_dir, "**")
-        if args.validation_dir is not None:
-            data_files["validation"] = os.path.join(args.validation_dir, "**")
         dataset = load_dataset(
             "imagefolder",
             data_files=data_files,
@@ -324,7 +315,7 @@ def main():
         # See more about loading custom images at
         # https://huggingface.co/docs/datasets/v2.0.0/en/image_process#imagefolder.
 
-    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["validation"].column_names
+    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["test"].column_names
     if args.image_column_name not in dataset_column_names:
         raise ValueError(
             f"--image_column_name {args.image_column_name} not found in dataset '{args.dataset_name}'. "
@@ -337,13 +328,6 @@ def main():
             "Make sure to set `--label_column_name` to the correct text column - one of "
             f"{', '.join(dataset_column_names)}."
         )
-
-    # If we don't have a validation split, split off a percentage of train as validation.
-    args.train_val_split = None if "validation" in dataset.keys() else args.train_val_split
-    if isinstance(args.train_val_split, float) and args.train_val_split > 0.0:
-        split = dataset["train"].train_test_split(args.train_val_split)
-        dataset["train"] = split["train"]
-        dataset["validation"] = split["test"]
 
     # Prepare label mappings.
     # We'll include these in the model's config to get human readable labels in the Inference API.
@@ -424,9 +408,9 @@ def main():
         # Set the training transforms
         train_dataset = dataset["train"].with_transform(preprocess_train)
         if args.max_eval_samples is not None:
-            dataset["validation"] = dataset["validation"].shuffle(seed=args.seed).select(range(args.max_eval_samples))
+            dataset["test"] = dataset["test"].shuffle(seed=args.seed).select(range(args.max_eval_samples))
         # Set the validation transforms
-        eval_dataset = dataset["validation"].with_transform(preprocess_val)
+        test_dataset = dataset["test"].with_transform(preprocess_val)
 
     # DataLoaders creation:
     def collate_fn(examples):
@@ -437,7 +421,7 @@ def main():
     train_dataloader = DataLoader(
         train_dataset, shuffle=True, collate_fn=collate_fn, batch_size=args.per_device_train_batch_size
     )
-    eval_dataloader = DataLoader(eval_dataset, collate_fn=collate_fn, batch_size=args.per_device_eval_batch_size)
+    test_dataloader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=args.per_device_eval_batch_size)
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -464,8 +448,8 @@ def main():
         overrode_max_train_steps = True
 
     # Prepare everything with our `accelerator`.
-    model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
-        model, optimizer, train_dataloader, eval_dataloader,
+    model, optimizer, train_dataloader, test_dataloader = accelerator.prepare(
+        model, optimizer, train_dataloader, test_dataloader,
     )
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
@@ -596,7 +580,7 @@ def main():
         optimizer.eval()
         # Reset specificity metric
         specificity_metric.reset()
-        for step, batch in enumerate(eval_dataloader):
+        for step, batch in enumerate(test_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
             predictions = outputs.logits.argmax(dim=-1)
