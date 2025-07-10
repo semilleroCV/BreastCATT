@@ -61,14 +61,15 @@ def main():
     dataset_with_embeddings = dataset.map(compute_embedding, batched=True, batch_size=32)
 
     # 4. Push the new dataset to the Hub
-    if args.new_config_name:
-        print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
-    else:
-        print("Pushing updated dataset to the Hub (default config)...")
-
     # Make sure you are logged in: `huggingface-cli login`
     # push_to_hub will use the default config if args.new_config_name is None
-    dataset_with_embeddings.push_to_hub(args.dataset_name, config_name=args.new_config_name) # type: ignore
+    if args.new_config_name and args.new_config_name is not None:
+        print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
+        dataset_with_embeddings.push_to_hub(args.dataset_name, config_name=args.new_config_name)
+    else:
+        print("Pushing updated dataset to the Hub (default config)...")
+        # Call without config_name to update the default configuration
+        dataset_with_embeddings.push_to_hub(args.dataset_name)
     
     print("Done!")
 
