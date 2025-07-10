@@ -102,7 +102,7 @@ def parse_args():
         "--model_name_or_path",
         type=str,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
-        default="google/vit-base-patch16-224-in21k",
+        default=None,
     )
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -368,9 +368,6 @@ def main():
     class_weights = torch.tensor(class_weights, dtype=torch.float32).to(accelerator.device)
 
     # Load pretrained model and image processor
-
-    # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
-    # download model & vocab.
     if args.vit_version == "small":
         model = tfvit.multimodal_vit_small_patch16(
             use_cross_attn=args.use_cross_attn,
@@ -407,7 +404,7 @@ def main():
     min_max_norm = Lambda(lambda x: (x - x.min()) / (x.max() - x.min() + 1e-8))
 
     train_transforms = Compose([
-        RandomResizedCrop(224),
+        Resize((224, 224)),
         RandomHorizontalFlip(),
         ToTensor(),
         min_max_norm,
