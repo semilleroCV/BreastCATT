@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument(
         "--new_config_name",
         type=str,
-        default=None,
+        default="with_embeddings",
         help="The name for the new dataset configuration on the Hub."
     )
     args = parser.parse_args()
@@ -62,14 +62,8 @@ def main():
 
     # 4. Push the new dataset to the Hub
     # Make sure you are logged in: `huggingface-cli login`
-    # push_to_hub will use the default config if args.new_config_name is None
-    if args.new_config_name and args.new_config_name is not None:
-        print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
-        dataset_with_embeddings.push_to_hub(args.dataset_name, config_name=args.new_config_name)
-    else:
-        print("Pushing updated dataset to the Hub (default config)...")
-        # Call without config_name to update the default configuration
-        dataset_with_embeddings.push_to_hub(args.dataset_name)
+    print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
+    dataset_with_embeddings.push_to_hub(args.dataset_name, config_name=args.new_config_name)
     
     print("Done!")
 
