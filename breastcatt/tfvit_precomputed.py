@@ -159,6 +159,13 @@ class MultiModalVisionTransformer(nn.Module):
 
         # Language model for text embedding (only if cross-attention is enabled)
         self.use_cross_attn = use_cross_attn
+        if self.use_cross_attn:
+            # GatorTron's output is 1024, project it to the ViT's embed_dim
+            self.text_embed_proj = nn.Sequential(
+                nn.Linear(1024, embed_dim),
+                nn.GELU(),
+                nn.Linear(embed_dim, embed_dim)
+            )
 
         # Segmentation model for ROI extraction (only if enabled)
         self.use_segmentation = use_segmentation
@@ -241,6 +248,10 @@ class MultiModalVisionTransformer(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
         x = self.pos_drop(x)
+
+        if self.use_cross_attn and text_embedding is not None and self.text_embed_proj is not None:
+            text_embedding = self.text_embed_proj(text_embedding)
+
         for block in self.blocks:
             x, text_embedding = block(x, text_embedding)
         x = self.norm(x)
