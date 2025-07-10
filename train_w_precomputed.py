@@ -459,7 +459,8 @@ def main():
         batch = {"pixel_values": pixel_values, "labels": labels}
         if args.use_cross_attn:
             # Stack the pre-computed embeddings into a tensor
-            text_embeddings = torch.tensor(np.array([example["text_embedding"] for example in examples]))
+            text_embeddings = torch.tensor(np.array([example["text_embedding"] for example in examples]),
+                                           dtype=torch.float)
             batch["text_embedding"] = text_embeddings
         return batch
 
