@@ -36,8 +36,6 @@ from torch.utils.data import DataLoader
 from torchmetrics.classification import BinarySpecificity
 from torchvision.transforms import (
     Compose,
-    RandomHorizontalFlip,
-    RandomResizedCrop,
     Resize,
     ToTensor,
     Lambda,
