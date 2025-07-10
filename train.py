@@ -20,6 +20,8 @@ import logging
 import math
 import os
 from pathlib import Path
+from sklearn.utils.class_weight import compute_class_weight
+import numpy as np
 
 import datasets
 import evaluate
@@ -359,8 +361,11 @@ def main():
     # Prepare label mappings.
     # We'll include these in the model's config to get human readable labels in the Inference API.
     labels = dataset["train"].features[args.label_column_name].names
-    label2id = {label: str(i) for i, label in enumerate(labels)}
-    id2label = {str(i): label for i, label in enumerate(labels)}
+
+    # Compute class weights to manage inbalance in the dataset
+    all_labels = dataset["train"][args.label_column_name]
+    class_weights = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
+    class_weights = torch.tensor(class_weights, dtype=torch.float32).to(accelerator.device)
 
     # Load pretrained model and image processor
 
@@ -370,21 +375,21 @@ def main():
         model = tfvit.multimodal_vit_small_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1,
+            num_classes=2,
             fusion_alpha=args.alpha
         )
     elif args.vit_version == "base":
         model = tfvit.multimodal_vit_base_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1,
+            num_classes=2,
             fusion_alpha=args.alpha
         )
     elif args.vit_version == "large":
         model = tfvit.multimodal_vit_large_patch16(
             use_cross_attn=args.use_cross_attn,
             use_segmentation=args.use_segmentation,
-            num_classes=1,
+            num_classes=2,
             fusion_alpha=args.alpha
         )
     elif args.vit_version == "pretrained":
@@ -548,6 +553,8 @@ def main():
     # update the progress_bar if load from checkpoint
     progress_bar.update(completed_steps)
 
+    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
+
     for epoch in range(starting_epoch, args.num_train_epochs):
         model.train()
         optimizer.train()
@@ -561,7 +568,9 @@ def main():
         for step, batch in enumerate(active_dataloader):
             with accelerator.accumulate(model):
                 outputs = model(**batch)
-                loss = outputs.loss
+                logits = outputs.logits
+                labels = batch["labels"]
+                loss = loss_fn(logits, labels)
                 # We keep track of the loss at each epoch
                 if args.with_tracking:
                     total_loss += loss.detach().float()

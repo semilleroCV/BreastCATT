@@ -20,6 +20,8 @@ import logging
 import math
 import os
 from pathlib import Path
+from sklearn.utils.class_weight import compute_class_weight
+import numpy as np
 
 import datasets
 import evaluate
@@ -335,8 +337,13 @@ def main():
     label2id = {label: str(i) for i, label in enumerate(labels)}
     id2label = {str(i): label for i, label in enumerate(labels)}
 
+    # Compute class weights to manage inbalance in the dataset
+    all_labels = dataset["train"][args.label_column_name]
+    class_weights = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
+    class_weights = torch.tensor(class_weights, dtype=torch.float32).to(accelerator.device)
+
     # Load pretrained model and image processor
-    #
+    
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
     config = AutoConfig.from_pretrained(
@@ -522,6 +529,8 @@ def main():
     # update the progress_bar if load from checkpoint
     progress_bar.update(completed_steps)
 
+    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
+
     for epoch in range(starting_epoch, args.num_train_epochs):
         model.train()
         optimizer.train()
@@ -535,7 +544,9 @@ def main():
         for step, batch in enumerate(active_dataloader):
             with accelerator.accumulate(model):
                 outputs = model(**batch)
-                loss = outputs.loss
+                logits = outputs.logits
+                labels = batch["labels"]
+                loss = loss_fn(logits, labels)
                 # We keep track of the loss at each epoch
                 if args.with_tracking:
                     total_loss += loss.detach().float()
