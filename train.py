@@ -617,9 +617,7 @@ def main():
         for step, batch in enumerate(test_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
-            logits = outputs.logits
-            scores = torch.sigmoid(logits)
-            predictions = (scores >= 0.5).long().squeeze(dim=-1)
+            predictions = outputs.logits.argmax(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
             accuracy.add_batch(predictions=predictions, references=references)
             precision.add_batch(predictions=predictions, references=references)
