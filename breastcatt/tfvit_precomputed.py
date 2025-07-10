@@ -323,7 +323,7 @@ def multimodal_vit_small_patch16(**kwargs):
     # Extract parameters from kwargs with defaults
     use_cross_attn = kwargs.get('use_cross_attn', True)
     use_segmentation = kwargs.get('use_segmentation', False)
-    num_classes = kwargs.get('num_classes', 1)
+    num_classes = kwargs.get('num_classes', 2)
     embed_dim = kwargs.get('embed_dim', 384)
     num_heads = kwargs.get('num_heads', 6)
     in_chans = kwargs.get('in_chans', 1)
@@ -380,7 +380,7 @@ def multimodal_vit_base_patch16(**kwargs):
     # Extract parameters from kwargs with defaults, but don't remove them from kwargs
     use_cross_attn = kwargs.get('use_cross_attn', True)
     use_segmentation = kwargs.get('use_segmentation', False)
-    num_classes = kwargs.get('num_classes', 1)
+    num_classes = kwargs.get('num_classes', 2)
     embed_dim = kwargs.get('embed_dim', 768)
     num_heads = kwargs.get('num_heads', 12)
     in_chans = kwargs.get('in_chans', 1)
@@ -443,7 +443,7 @@ def multimodal_vit_large_patch16(**kwargs):
     # Extract parameters from kwargs with defaults
     use_cross_attn = kwargs.get('use_cross_attn', True)
     use_segmentation = kwargs.get('use_segmentation', False)
-    num_classes = kwargs.get('num_classes', 1)
+    num_classes = kwargs.get('num_classes', 2)
     embed_dim = kwargs.get('embed_dim', 1024)
     num_heads = kwargs.get('num_heads', 16)
     in_chans = kwargs.get('in_chans', 1)
