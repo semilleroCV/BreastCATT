@@ -17,9 +17,6 @@ import os
 import json
 from huggingface_hub import hf_hub_download
 import urllib.request
-
-from breastcatt.segmenter import SegmentationModel
-
 from mae.pos_embed import get_2d_sincos_pos_embed
 
 @dataclass
@@ -83,45 +80,6 @@ def download_mae_weights(model_size="base", force_download=False):
             os.remove(local_path)  # Clean up partial download
         raise
     
-def download_transunet_weights(force_download=False):
-    """
-    Downloads TransUNet weights from the Hugging Face Hub.
-
-    Args:
-        force_download (bool): Whether to force re-download if file exists.
-
-    Returns:
-        str: Path to the downloaded checkpoint file.
-    """
-    repo_id = "SemilleroCV/transunet-breast-cancer"
-    filename = "lucky-sweep-6_0.4937.pth"
-    checkpoint_dir = "checkpoints/segmentation"
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    
-    local_path = os.path.join(checkpoint_dir, filename)
-
-    if os.path.exists(local_path) and not force_download:
-        print(f"✅ TransUNet weights already exist at: {local_path}")
-        return local_path
-
-    print(f"📥 Downloading TransUNet weights from Hugging Face Hub ({repo_id})...")
-    
-    try:
-        # hf_hub_download will handle caching and progress bars automatically
-        downloaded_path = hf_hub_download(
-            repo_id=repo_id,
-            filename=filename,
-            local_dir=checkpoint_dir,
-        )
-        print(f"\n✅ Successfully downloaded TransUNet weights to: {downloaded_path}")
-        return downloaded_path
-        
-    except Exception as e:
-        print(f"\n❌ Error downloading TransUNet weights: {e}")
-        if os.path.exists(local_path):
-            os.remove(local_path)  # Clean up partial download
-        raise
-
 class MultiModalBlock(nn.Module):
     def __init__(self, embed_dim, num_heads, mlp_ratio, cross_attn=False, cross_num_heads=8, norm_layer=nn.LayerNorm, fusion_alpha=1.0):
         super().__init__()
@@ -167,16 +125,8 @@ class MultiModalVisionTransformer(nn.Module):
                 nn.Linear(embed_dim, embed_dim)
             )
 
-        # Segmentation model for ROI extraction (only if enabled)
+        # Segmentation ROI (only if enabled)
         self.use_segmentation = use_segmentation
-        self.segmentation_model = None
-        if use_segmentation:
-          segmentation_weights_path = download_transunet_weights()
-          self.segmentation_model = SegmentationModel(
-              img_size=224, n_skip=3, num_classes=1,
-              dir_model=segmentation_weights_path,
-              device=torch.device('cpu')
-          )
 
         # Transformer blocks
         self.blocks = nn.ModuleList([
@@ -258,12 +208,10 @@ class MultiModalVisionTransformer(nn.Module):
         outcome = x[:, 0]
         return outcome
 
-    def forward_loss(self, pixel_values, labels=None, text_embedding=None):
+    def forward_loss(self, pixel_values, labels=None, text_embedding=None, segmentation_mask=None):
         # Apply segmentation mask only if enabled
-        if self.use_segmentation and self.segmentation_model is not None:
-            logits = self.segmentation_model(pixel_values)
-            seg_mask = (torch.sigmoid(logits) > 0.5).float() # Treshold set as 0.5
-            pixel_values = pixel_values * seg_mask
+        if self.use_segmentation and segmentation_mask is not None:
+            pixel_values = pixel_values * segmentation_mask
 
         # The text_embedding is now expected to be a tensor from the batch
         outcome = self.forward_features(pixel_values, text_embedding)
@@ -279,8 +227,10 @@ class MultiModalVisionTransformer(nn.Module):
                 loss = loss_fn(logits, labels)
         return ModelOutput(logits=logits, loss=loss)
 
-    def forward(self, pixel_values, labels=None, text_embedding=None):
-        return self.forward_loss(pixel_values, labels=labels, text_embedding=text_embedding)
+    def forward(self, pixel_values, labels=None, text_embedding=None, segmentation_mask=None):
+        return self.forward_loss(pixel_values, labels=labels,
+                                 text_embedding=text_embedding,
+                                 segmentation_mask=segmentation_mask)
 
     def save_pretrained(self, save_directory):
         """
