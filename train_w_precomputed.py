@@ -480,7 +480,7 @@ def main():
             text_embeddings = torch.tensor(np.array([example["text_embedding"] for example in examples]),
                                            dtype=torch.float)
             batch["text_embedding"] = text_embeddings
-      if args.use_segmentation:
+        if args.use_segmentation:
             # The mask are already tensors, we only need to stack
             segmentation_masks = torch.stack([example["segmentation_mask"] for example in examples])
             batch["segmentation_mask"] = segmentation_masks
