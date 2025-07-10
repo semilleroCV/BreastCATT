@@ -250,7 +250,7 @@ class MultiModalVisionTransformer(nn.Module):
         x = self.pos_drop(x)
 
         if self.use_cross_attn and text_embedding is not None and self.text_embed_proj is not None:
-            text_embedding = self.text_embed_proj(text_embedding)
+            text_embedding = self.text_embed_proj(text_embedding).unsqueeze(1) # (B, 1, embed_dim)
 
         for block in self.blocks:
             x, text_embedding = block(x, text_embedding)
