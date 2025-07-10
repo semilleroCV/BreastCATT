@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument(
         "--new_config_name",
         type=str,
-        default="with_embeddings_and_segmentation",
+        default=None,
         help="The name for the new dataset configuration on the Hub."
     )
     return parser.parse_args()
@@ -58,7 +58,7 @@ def main():
 
     # 2. Load Dataset (assuming it already has embeddings)
     print(f"Loading dataset: {args.dataset_name}")
-    dataset = load_dataset(args.dataset_name, name="with_embeddings", split=args.split)
+    dataset = load_dataset(args.dataset_name, split=args.split)
 
     # 3. Define Transforms and Computation Function
     # Transforms required by the segmentation model
@@ -94,8 +94,13 @@ def main():
     )
 
     # 5. Push the new dataset to the Hub
-    print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
+    if args.new_config_name:
+        print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
+    else:
+        print("Pushing updated dataset to the Hub (default config)...")
+
     # Make sure you are logged in: `huggingface-cli login`
+    # push_to_hub will use the default config if args.new_config_name is None
     dataset_with_masks.push_to_hub(args.dataset_name, config_name=args.new_config_name)
     
     print("Done!")

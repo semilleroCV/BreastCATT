@@ -17,6 +17,12 @@ def parse_args():
     )
     parser.add_argument("--split", type=str, default="train",
                         help="The split of the dataset we want to get text embeddings.")
+    parser.add_argument(
+        "--new_config_name",
+        type=str,
+        default=None,
+        help="The name for the new dataset configuration on the Hub."
+    )
     args = parser.parse_args()
     return args
 
@@ -55,10 +61,14 @@ def main():
     dataset_with_embeddings = dataset.map(compute_embedding, batched=True, batch_size=32)
 
     # 4. Push the new dataset to the Hub
-    print("Pushing new dataset to the Hub...")
+    if args.new_config_name:
+        print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
+    else:
+        print("Pushing updated dataset to the Hub (default config)...")
+
     # Make sure you are logged in: `huggingface-cli login`
-    # You can save it as a new dataset or a new configuration of the existing one.
-    dataset_with_embeddings.push_to_hub(args.dataset_name, config_name="with_embeddings") # type: ignore
+    # push_to_hub will use the default config if args.new_config_name is None
+    dataset_with_embeddings.push_to_hub(args.dataset_name, config_name=args.new_config_name) # type: ignore
     
     print("Done!")
 
