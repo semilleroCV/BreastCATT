@@ -610,9 +610,7 @@ def main():
                         accelerator.wait_for_everyone()
                         unwrapped_model = accelerator.unwrap_model(model)
                         unwrapped_model.save_pretrained(
-                            args.output_dir,
-                            is_main_process=accelerator.is_main_process,
-                            save_function=accelerator.save,
+                            args.output_dir
                         )
                         if accelerator.is_main_process:
                             api.upload_folder(
@@ -669,7 +667,7 @@ def main():
             accelerator.wait_for_everyone()
             unwrapped_model = accelerator.unwrap_model(model)
             unwrapped_model.save_pretrained(
-                args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
+                args.output_dir
             )
             if accelerator.is_main_process:
                 api.upload_folder(
@@ -693,7 +691,7 @@ def main():
         # accelerator.wait_for_everyone()
         unwrapped_model = accelerator.unwrap_model(model)
         unwrapped_model.save_pretrained(
-            args.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save
+            args.output_dir
         )
         if accelerator.is_main_process:
             if args.push_to_hub:
