@@ -223,7 +223,7 @@ def parse_args():
 
     # Sanity checks
     if args.dataset_name is None and args.train_dir is None:
-        raise ValueError("Need either a dataset name or a training/validation folder.")
+        raise ValueError("Need either a dataset name or a training folder.")
 
     if args.push_to_hub or args.with_tracking:
         if args.output_dir is None:
@@ -416,7 +416,7 @@ def main():
         train_dataset = dataset["train"].with_transform(preprocess_train)
         if args.max_eval_samples is not None:
             dataset["test"] = dataset["test"].shuffle(seed=args.seed).select(range(args.max_eval_samples))
-        # Set the validation transforms
+        # Set the test transforms
         test_dataset = dataset["test"].with_transform(preprocess_val)
 
     # DataLoaders creation:
