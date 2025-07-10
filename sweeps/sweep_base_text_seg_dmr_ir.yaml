@@ -1,0 +1,34 @@
+method: bayes
+metric:
+  goal: maximize
+  name: sensitivity
+parameters:
+  # max_train_samples: # for debug purposes
+  #  value: 100
+  #max_eval_samples: # for debug purposes
+  #  value: 50
+  use_cross_attn:
+    value: true
+  use_segmentation:
+    value: true
+  vit_version:
+    distribution: categorical
+    values:
+      - base
+  dataset_name:
+    distribution: categorical
+    values:
+      - SemilleroCV/DMR-IR
+  checkpointing_steps:
+    value: null
+  learning_rate:
+    distribution: uniform
+    max: 0.0001
+    min: 2.5e-05
+  num_train_epochs:
+    value: 30
+  per_device_eval_batch_size:
+    value: 8
+  per_device_train_batch_size:
+    value: 96
+program: train_w_precomputed.py
