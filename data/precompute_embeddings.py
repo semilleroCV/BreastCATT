@@ -58,7 +58,7 @@ def main():
     print("Pushing new dataset to the Hub...")
     # Make sure you are logged in: `huggingface-cli login`
     # You can save it as a new dataset or a new configuration of the existing one.
-    dataset_with_embeddings.push_to_hub("SemilleroCV/DMR-IR", config_name="with_embeddings")
+    dataset_with_embeddings.push_to_hub(args.dataset_name, config_name="with_embeddings")
     
     print("Done!")
 
