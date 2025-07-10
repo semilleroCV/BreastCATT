@@ -98,11 +98,11 @@ def main():
     # push_to_hub will use the default config if args.new_config_name is None
     if args.new_config_name and args.new_config_name is not None:
         print(f"Pushing new dataset to the Hub under config: {args.new_config_name}")
-        dataset_with_embeddings.push_to_hub(args.dataset_name, config_name=args.new_config_name)
+        dataset_with_masks.push_to_hub(args.dataset_name, config_name=args.new_config_name)
     else:
         print("Pushing updated dataset to the Hub (default config)...")
         # Call without config_name to update the default configuration
-        dataset_with_embeddings.push_to_hub(args.dataset_name)
+        dataset_with_masks.push_to_hub(args.dataset_name)
 
     print("Done!")
 
