@@ -42,6 +42,7 @@ from torchvision.transforms import (
     ToTensor,
     Lambda,
 )
+from torchvision.transforms import functional as F
 from tqdm.auto import tqdm
 from breastcatt import tfvit_precomputed as tfvit
 import transformers
@@ -79,12 +80,6 @@ def parse_args():
             " dataset)."
         ),
     )
-    parser.add_argument(
-        "--dataset_config_name",
-        type=str,
-        default=None,
-        help="The configuration name of the dataset to use (via the datasets library).",
-    )
     parser.add_argument("--train_dir", type=str, default=None, help="A folder containing the training data.")
     parser.add_argument(
         "--max_train_samples",
@@ -108,7 +103,7 @@ def parse_args():
         "--model_name_or_path",
         type=str,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
-        default="google/vit-base-patch16-224-in21k",
+        default=None,
     )
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -338,8 +333,10 @@ def main():
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
+        config_name = "with_embeddings_and_segmentation" if args.use_segmentation else "with_embeddings"
+        logger.info(f"Loading dataset with configuration: {config_name}")
         dataset = load_dataset(args.dataset_name,
-                               name=args.dataset_config_name,
+                               name=config_name,
                                trust_remote_code=args.trust_remote_code)
     else:
         data_files = {}
@@ -376,9 +373,6 @@ def main():
     class_weights = torch.tensor(class_weights, dtype=torch.float32).to(accelerator.device)
 
     # Load pretrained model and image processor
-
-    # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
-    # download model & vocab.
     if args.vit_version == "small":
         model = tfvit.multimodal_vit_small_patch16(
             use_cross_attn=args.use_cross_attn,
@@ -415,8 +409,7 @@ def main():
     min_max_norm = Lambda(lambda x: (x - x.min()) / (x.max() - x.min() + 1e-8))
 
     train_transforms = Compose([
-        RandomResizedCrop(224),
-        RandomHorizontalFlip(),
+        Resize((224, 224)),
         ToTensor(),
         min_max_norm,
     ])
@@ -429,17 +422,44 @@ def main():
     )
 
     def preprocess_train(example_batch):
-        """Apply _train_transforms across a batch."""
-        example_batch["pixel_values"] = [
-            train_transforms(image) for image in example_batch[args.image_column_name]
-        ]
+        """Apply train_transforms across a batch."""
+        processed_images = []
+        processed_masks = []
+        for i in range(len(example_batch[args.image_column_name])):
+            image = example_batch[args.image_column_name][i]
+            
+            # Apply base transforms to the image
+            image = train_transforms(image)
+
+            if args.use_segmentation:
+                # Convert mask to tensor. It's already (1, H, W) from pre-computation.
+                mask = torch.from_numpy(np.array(example_batch["segmentation_mask"][i])).float()
+                
+                # Apply RandomHorizontalFlip to both image and mask with the same random chance
+                if torch.rand(1) < 0.5:
+                    image = F.hflip(image)
+                    mask = F.hflip(mask)
+                
+                processed_masks.append(mask)
+
+            processed_images.append(image)
+
+        example_batch["pixel_values"] = processed_images
+        if args.use_segmentation:
+            example_batch["segmentation_mask"] = processed_masks
         return example_batch
 
     def preprocess_test(example_batch):
-        """Apply _val_transforms across a batch."""
+        """Apply val_transforms across a batch."""
+        # No random augmentations in validation, so we can process them separately
         example_batch["pixel_values"] = [
             val_transforms(image) for image in example_batch[args.image_column_name]
         ]
+        if args.use_segmentation:
+            # Just convert mask to tensor
+            example_batch["segmentation_mask"] = [
+                torch.from_numpy(np.array(mask)).float() for mask in example_batch["segmentation_mask"]
+            ]
         return example_batch
 
     with accelerator.main_process_first():
@@ -462,6 +482,10 @@ def main():
             text_embeddings = torch.tensor(np.array([example["text_embedding"] for example in examples]),
                                            dtype=torch.float)
             batch["text_embedding"] = text_embeddings
+      if args.use_segmentation:
+            # The mask are already tensors, we only need to stack
+            segmentation_masks = torch.stack([example["segmentation_mask"] for example in examples])
+            batch["segmentation_mask"] = segmentation_masks
         return batch
 
     train_dataloader = DataLoader(train_dataset, shuffle=True, # type: ignore
