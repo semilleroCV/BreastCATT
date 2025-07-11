@@ -354,7 +354,7 @@ def main():
 
     # Compute class weights to manage inbalance in the dataset
     all_labels = dataset["train"][args.label_column_name] # type: ignore
-    class_weights = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
+    class_weights_np = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
 
     # Load pretrained model and image processor
     if args.vit_version == "small":
@@ -509,7 +509,7 @@ def main():
 
     # Create the class weights tensor with the same dtype as the model
     model_dtype = next(model.parameters()).dtype
-    class_weights = torch.tensor(class_weights, dtype=model_dtype).to(accelerator.device)
+    class_weights = torch.tensor(class_weights_np, dtype=model_dtype).to(accelerator.device)
 
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
