@@ -508,8 +508,8 @@ def main():
     )
 
     # Create the class weights tensor with the same dtype as the model
-    model_dtype = next(model.parameters()).dtype
-    class_weights = torch.tensor(class_weights_np, dtype=model_dtype).to(accelerator.device)
+    # model_dtype = next(model.parameters()).dtype
+    class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
 
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
