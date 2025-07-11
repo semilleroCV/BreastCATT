@@ -305,7 +305,7 @@ def main():
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(args.dataset_name, trust_remote_code=args.trust_remote_code)
+        dataset = load_dataset(args.dataset_name)
     else:
         data_files = {}
         if args.train_dir is not None:
