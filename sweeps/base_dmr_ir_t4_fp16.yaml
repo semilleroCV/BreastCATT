@@ -19,15 +19,6 @@ parameters:
     distribution: categorical
     values:
       - SemilleroCV/DMR-IR
-  alpha:
-    distribution: categorical
-    values:
-      - 0.1
-      - 0.3
-      - 0.5
-      - 0.7
-      - 0.9
-      - 1.0
   checkpointing_steps:
     value: null
   learning_rate:
