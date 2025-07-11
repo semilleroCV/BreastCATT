@@ -411,7 +411,7 @@ def main():
         ToTensor(),
         min_max_norm,
     ])
-    val_transforms = Compose(
+    test_transforms = Compose(
         [
             Resize((224, 224)),
             ToTensor(),
@@ -448,10 +448,10 @@ def main():
         return example_batch
 
     def preprocess_test(example_batch):
-        """Apply val_transforms across a batch."""
+        """Apply test_transforms across a batch."""
         # No random augmentations in validation, so we can process them separately
         example_batch["pixel_values"] = [
-            val_transforms(image) for image in example_batch[args.image_column_name]
+            test_transforms(image) for image in example_batch[args.image_column_name]
         ]
         if args.use_segmentation:
             # Just convert mask to tensor
