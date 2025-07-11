@@ -116,14 +116,6 @@ def parse_args():
         help="Batch size (per device) for the evaluation dataloader.",
     )
     parser.add_argument(
-        "--distributed_training",
-        type=str2bool,
-        nargs="?",
-        const=True,
-        default=False,
-        help="Whether to enable distubuted training.",
-    )
-    parser.add_argument(
         "--learning_rate",
         type=float,
         default=5e-5,
@@ -363,11 +355,8 @@ def main():
     # Compute class weights to manage inbalance in the dataset
     all_labels = dataset["train"][args.label_column_name] # type: ignore
     class_weights_np = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
-    # we need to set dtype to float16 for distributed training, or on single-gpu training return to float32
-    if args.distributed_training:
-      class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
-    else:
-      class_weights = torch.tensor(class_weights_np, dtype=torch.float32).to(accelerator.device)
+    # we need to set dtype float16 to enable accelerate launching, or return to float32 on default python launch
+    class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
 
     # Load pretrained model and image processor
     if args.vit_version == "small":
