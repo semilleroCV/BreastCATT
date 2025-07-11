@@ -355,6 +355,8 @@ def main():
     # Compute class weights to manage inbalance in the dataset
     all_labels = dataset["train"][args.label_column_name] # type: ignore
     class_weights_np = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
+    # we need to set dtype to float16 for distributed training, if there are problems on single-gpu training return to float32
+    class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
 
     # Load pretrained model and image processor
     if args.vit_version == "small":
@@ -506,11 +508,6 @@ def main():
     model, optimizer, train_dataloader, test_dataloader = accelerator.prepare(
         model, optimizer, train_dataloader, test_dataloader
     )
-
-    # Create the class weights tensor with the same dtype as the model
-    # model_dtype = next(model.parameters()).dtype
-    class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
-
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)

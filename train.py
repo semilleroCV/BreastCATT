@@ -352,8 +352,9 @@ def main():
 
     # Compute class weights to manage inbalance in the dataset
     all_labels = dataset["train"][args.label_column_name]
-    class_weights = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
-    class_weights = torch.tensor(class_weights, dtype=torch.float32).to(accelerator.device)
+    class_weights_np = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
+    # we need to set dtype to float16 for distributed training, if there are problems on single-gpu training return to float32
+    class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
 
     # Load pretrained model and image processor
     if args.vit_version == "small":
