@@ -341,7 +341,7 @@ def main():
     all_labels = dataset["train"][args.label_column_name]
     class_weights_np = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
     # we need to set dtype float16 to enable accelerate launching, or return to float32 on default python launch
-    class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
+    class_weights = torch.tensor(class_weights_np, dtype=torch.float32).to(accelerator.device)
 
     # Load pretrained model and image processor
     
