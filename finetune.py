@@ -590,21 +590,32 @@ def main():
 
         model.eval()
         optimizer.eval()
+        if args.with_tracking:
+            test_loss = 0
         # Reset specificity metric
         specificity_metric.reset()
         for step, batch in enumerate(test_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
-            predictions = outputs.logits.argmax(dim=-1)
+            logits = outputs.logits
+            labels = batch["labels"]
+            loss = loss_fn(logits, labels)
+            # We keep track of the loss at each epoch
+            if args.with_tracking:
+                test_loss += loss.detach().float()
+            predictions = logits.argmax(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
             accuracy.add_batch(predictions=predictions, references=references)
             precision.add_batch(predictions=predictions, references=references)
             recall.add_batch(predictions=predictions, references=references)
             specificity_metric.update(predictions, references)
+        accuracy_result = accuracy.compute()
+        precision_result = precision.compute(zero_division=0)
+        recall_result = recall.compute(zero_division=0)
         eval_metric = {
-            "accuracy": accuracy.compute()["accuracy"],
-            "precision": precision.compute(zero_division=0)["precision"],
-            "recall": recall.compute(zero_division=0)["recall"]
+            "accuracy": accuracy_result["accuracy"] if accuracy_result is not None else None,
+            "precision": precision_result["precision"] if precision_result is not None else None,
+            "recall": recall_result["recall"] if recall_result is not None else None
         }
         # Calculate specificity and use recall as sensitivity
         score_specificity = specificity_metric.compute()
@@ -617,7 +628,8 @@ def main():
                     "accuracy": eval_metric['accuracy'],
                     "precision": eval_metric['precision'],
                     "sensitivity": eval_metric['recall'],
-                    "train_loss": total_loss.item() / len(train_dataloader),
+                    "train_loss": total_loss.item() / len(train_dataloader), # type: ignore
+                    "test_loss": test_loss.item() / len(test_dataloader), # type: ignore
                     "epoch": epoch,
                     "step": completed_steps,
                 },

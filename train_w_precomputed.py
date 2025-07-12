@@ -636,12 +636,20 @@ def main():
 
         model.eval()
         optimizer.eval()
+        if args.with_tracking:
+            test_loss = 0
         # Reset specificity metric
         specificity_metric.reset()
         for step, batch in enumerate(test_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
-            predictions = outputs.logits.argmax(dim=-1)
+            logits = outputs.logits
+            labels = batch["labels"]
+            loss = loss_fn(logits, labels)
+            # We keep track of the loss at each epoch
+            if args.with_tracking:
+                test_loss += loss.detach().float()
+            predictions = logits.argmax(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
             accuracy.add_batch(predictions=predictions, references=references)
             precision.add_batch(predictions=predictions, references=references)
@@ -667,6 +675,7 @@ def main():
                     "precision": eval_metric['precision'],
                     "sensitivity": eval_metric['recall'],
                     "train_loss": total_loss.item() / len(train_dataloader), # type: ignore
+                    "test_loss": test_loss.item() / len(test_dataloader), # type: ignore
                     "epoch": epoch,
                     "step": completed_steps,
                 },
