@@ -1,20 +1,16 @@
 method: bayes
 metric:
-  goal: maximize
-  name: sensitivity
+  goal: minimize
+  name: train_loss
 parameters:
-  model_name_or_path:
-    distribution: categorical
-    values:
-      - SemilleroCV/tfvit-base_text
-  vit_version:
-    distribution: categorical
-    values:
-      - best
   # max_train_samples: # for debug purposes
   #  value: 100
   #max_eval_samples: # for debug purposes
   #  value: 50
+  model_name_or_path:
+    distribution: categorical
+    values:
+      - microsoft/resnet-50
   dataset_name:
     distribution: categorical
     values:
@@ -22,18 +18,25 @@ parameters:
   checkpointing_steps:
     value: null
   learning_rate:
-    distribution: uniform
+    distribution: log_uniform_values
     max: 0.0001
     min: 2.5e-05
+  weight_decay:
+    distribution: log_uniform_values
+    max: 0.1
+    min: 0.001
   num_train_epochs:
-    value: 30
+    value: 150
   per_device_eval_batch_size:
-    value: 8
+    value: 64
   per_device_train_batch_size:
-    distribution: categorical
-    values:
-      - 2
-      - 4
-      - 8
-      - 16
-program: trainer.py
+    value: 32
+program: finetune.py
+
+command:
+  - ${env}
+  - accelerate
+  - launch
+  - --num_processes=1
+  - ${program}
+  - ${args}
