@@ -1,0 +1,50 @@
+method: bayes
+metric:
+  goal: minimize
+  name: test_loss
+
+early_terminate:
+  type: hyperband
+  # max_iter is the max number of epochs a single run can have. this must be a high power of eta
+  max_iter: 27
+  # eta is the reduction factor. It will keep the top 1/eta runs. 3 is a standard value.
+  eta: 3
+  # Specify the total number of brackets (required for max_iter)
+  s: 3
+
+parameters:
+  # max_train_samples: # for debug purposes
+  #  value: 100
+  #max_eval_samples: # for debug purposes
+  #  value: 50
+  model_name_or_path:
+    distribution: categorical
+    values:
+      - google/vit-base-patch16-224-in21k
+  dataset_name:
+    distribution: categorical
+    values:
+      - SemilleroCV/BreastThermography
+  checkpointing_steps:
+    value: null
+  learning_rate:
+    distribution: log_uniform_values
+    max: 1.0e-04
+    min: 1.0e-06
+  weight_decay:
+    values: [0.1, 0.2]
+  num_train_epochs:
+    value: 27
+  per_device_eval_batch_size:
+    value: 128
+  per_device_train_batch_size:
+    values: [16, 32, 64]
+program: finetune.py
+
+command:
+  - ${env}
+  - accelerate
+  - launch
+  - --num_processes=2
+  - ${program}
+  - ${args}

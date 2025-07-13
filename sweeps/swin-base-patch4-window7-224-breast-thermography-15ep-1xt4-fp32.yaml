@@ -1,20 +1,16 @@
 method: bayes
 metric:
-  goal: maximize
-  name: sensitivity
+  goal: minimize
+  name: train_loss
 parameters:
   # max_train_samples: # for debug purposes
   #  value: 100
   #max_eval_samples: # for debug purposes
   #  value: 50
-  use_cross_attn:
-    value: true
-  use_segmentation:
-    value: true
-  vit_version:
+  model_name_or_path:
     distribution: categorical
     values:
-      - base
+      - microsoft/swin-base-patch4-window7-224
   dataset_name:
     distribution: categorical
     values:
@@ -22,18 +18,25 @@ parameters:
   checkpointing_steps:
     value: null
   learning_rate:
-    distribution: uniform
-    max: 0.0001
-    min: 2.5e-05
+    distribution: log_uniform_values
+    max: 2.5e-05
+    min: 1.0e-05
+  weight_decay:
+    distribution: log_uniform_values
+    max: 0.1
+    min: 0.001
   num_train_epochs:
-    value: 30
+    value: 15
   per_device_eval_batch_size:
-    value: 8
+    value: 64
   per_device_train_batch_size:
-    distribution: categorical
-    values:
-      - 2
-      - 4
-      - 8
-      - 16
-program: train.py
+    value: 32
+program: finetune.py
+
+command:
+  - ${env}
+  - accelerate
+  - launch
+  - --num_processes=1
+  - ${program}
+  - ${args}

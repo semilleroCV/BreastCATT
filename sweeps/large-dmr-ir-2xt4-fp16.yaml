@@ -8,11 +8,9 @@ parameters:
   #max_eval_samples: # for debug purposes
   #  value: 50
   use_cross_attn:
-    value: true
+    value: false
   use_segmentation:
     value: false
-  distributed_training:
-    value: true
   vit_version:
     distribution: categorical
     values:
@@ -21,10 +19,6 @@ parameters:
     distribution: categorical
     values:
       - SemilleroCV/DMR-IR
-  alpha:
-    distribution: uniform
-    min: 0.1
-    max: 1.0
   checkpointing_steps:
     value: null
   learning_rate:
@@ -34,9 +28,9 @@ parameters:
   num_train_epochs:
     value: 30
   per_device_eval_batch_size:
-    value: 8
+    value: 112
   per_device_train_batch_size:
-    value: 32
+    value: 56
 program: train_w_precomputed.py
 
 command:
