@@ -11,7 +11,7 @@ if project_root not in sys.path:
 
 from datasets import load_dataset
 from breastcatt.segmenter import SegmentationModel
-from breastcatt.tfvit_precomputed import download_transunet_weights
+from breastcatt.tfvit import download_transunet_weights
 from torchvision.transforms import Compose, Resize, ToTensor, Lambda
 
 def parse_args():
@@ -58,7 +58,7 @@ def main():
 
     # 2. Load Dataset (assuming it already has embeddings)
     print(f"Loading dataset: {args.dataset_name}")
-    dataset = load_dataset(args.dataset_name, split=args.split)
+    dataset = load_dataset(args.dataset_name, split=args.split, name="with_embeddings")
 
     # 3. Define Transforms and Computation Function
     # Transforms required by the segmentation model
@@ -90,7 +90,7 @@ def main():
         compute_segmentation_mask, 
         batched=True, 
         batch_size=16,
-        desc="Generating segmentation masks"
+        desc="Generating segmentation masks" # type: ignore
     )
 
     # 5. Push the new dataset to the Hub
