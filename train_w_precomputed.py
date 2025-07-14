@@ -319,7 +319,7 @@ def main():
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        config_name = "with_embeddings_and_segmentation_new" if args.use_segmentation else "with_embeddings"
+        config_name = "with_embeddings_and_segmentation" if args.use_segmentation else "with_embeddings"
         logger.info(f"Loading dataset with configuration: {config_name}")
         dataset = load_dataset(args.dataset_name,
                                name=config_name)

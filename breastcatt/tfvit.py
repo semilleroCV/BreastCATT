@@ -95,8 +95,8 @@ def download_transunet_weights(force_download=False):
     Returns:
         str: Path to the downloaded checkpoint file.
     """
-    repo_id = "SemilleroCV/transunet-breast-cancer-new"
-    filename = "best_model_R50-ViT-B_16_6feos98w.pth"
+    repo_id = "SemilleroCV/transunet-breast-cancer"
+    filename = "lucky-sweep-6_0.4937.pth"
     checkpoint_dir = "checkpoints/segmentation"
     os.makedirs(checkpoint_dir, exist_ok=True)
     
