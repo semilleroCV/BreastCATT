@@ -305,7 +305,9 @@ def main():
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(args.dataset_name)
+        config_name = "with_embeddings_and_segmentation_splitted" if args.dataset_name == "SemilleroCV/DMR-IR" else "with_embeddings_and_segmentation_per_view"
+        dataset = load_dataset(args.dataset_name,
+                               name=config_name)
     else:
         data_files = {}
         if args.train_dir is not None:
