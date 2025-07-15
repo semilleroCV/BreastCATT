@@ -37,7 +37,6 @@ from torchmetrics.classification import BinarySpecificity
 from torchvision.transforms import (
     Compose,
     RandomHorizontalFlip,
-    RandomResizedCrop,
     Resize,
     ToTensor,
     Lambda,
@@ -233,6 +232,13 @@ def parse_args():
         type=float,
         default=1.0,
         help="The alpha from the multimodal Vit Model. "
+    )
+    parser.add_argument(
+        "--metric_for_best_model",
+        type=str,
+        default=None,
+        help="The metric to use for saving the best model. If a metric is specified, the script will save the model checkpoint that achieves the best score on that metric.",
+        choices=["accuracy", "precision", "recall", "specificity", "val_loss"],
     )
     args = parser.parse_args()
 
@@ -489,6 +495,18 @@ def main():
         experiment_config = vars(args)
         accelerator.init_trackers(args.wandb_project, experiment_config)
 
+    # Initialize for best model saving
+    best_metric_value = 0.0
+    metric_mode = "max"
+    if args.metric_for_best_model is not None:
+        if args.metric_for_best_model == "val_loss":
+            best_metric_value = float("inf")
+            metric_mode = "min"
+        else:
+            best_metric_value = 0.0
+            metric_mode = "max"
+        logger.info(f"Conditional checkpointing is enabled. Tracking '{args.metric_for_best_model}'. Initial best value: {best_metric_value}")
+
     # Get the metric function using evaluate and create a torchmetrics specificity calculator
     accuracy = evaluate.load("accuracy")
     precision = evaluate.load("precision")
@@ -571,6 +589,7 @@ def main():
                 progress_bar.update(1)
                 completed_steps += 1
 
+            # TODO: implement conditional checkpointing when checkpointing_steps is stated
             if isinstance(checkpointing_steps, int):
                 if completed_steps % checkpointing_steps == 0 and accelerator.sync_gradients:
                     output_dir = f"step_{completed_steps}"
@@ -659,7 +678,30 @@ def main():
                     token=args.hub_token,
                 )
 
+        # Conditional checkpointing logic
+        save_checkpoint = False
         if args.checkpointing_steps == "epoch":
+            if args.metric_for_best_model is None:
+                # If no metric is specified, save at every epoch
+                save_checkpoint = True
+            else:
+                # If a metric is specified, check for improvement
+                current_metric_value = eval_metric.get(args.metric_for_best_model)
+                if current_metric_value is not None:
+                    improvement = False
+                    if metric_mode == "max" and current_metric_value > best_metric_value:
+                        improvement = True
+                    elif metric_mode == "min" and current_metric_value < best_metric_value:
+                        improvement = True
+                    
+                    if improvement:
+                        logger.info(f"Metric '{args.metric_for_best_model}' improved from {best_metric_value:.4f} to {current_metric_value:.4f}.")
+                        best_metric_value = current_metric_value
+                        save_checkpoint = True
+                    else:
+                        logger.info(f"Metric '{args.metric_for_best_model}' did not improve from {best_metric_value:.4f}. Skipping checkpoint.")
+
+        if save_checkpoint:
             output_dir = f"epoch_{epoch}"
             if args.output_dir is not None:
                 output_dir = os.path.join(args.output_dir, output_dir)
