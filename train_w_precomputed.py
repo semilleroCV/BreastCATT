@@ -334,7 +334,7 @@ def main():
         # See more about loading custom images at
         # https://huggingface.co/docs/datasets/v2.0.0/en/image_process#imagefolder.
 
-    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["test"].column_names # type: ignore
+    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["validation"].column_names # type: ignore
     if args.image_column_name not in dataset_column_names:
         raise ValueError(
             f"--image_column_name {args.image_column_name} not found in dataset '{args.dataset_name}'. "
@@ -399,7 +399,7 @@ def main():
         ToTensor(),
         min_max_norm,
     ])
-    test_transforms = Compose(
+    val_transforms = Compose(
         [
             Resize((224, 224)),
             ToTensor(),
@@ -435,11 +435,11 @@ def main():
             example_batch["segmentation_mask"] = processed_masks
         return example_batch
 
-    def preprocess_test(example_batch):
-        """Apply test_transforms across a batch."""
+    def preprocess_val(example_batch):
+        """Apply val_transforms across a batch."""
         # No random augmentations in validation, so we can process them separately
         example_batch["pixel_values"] = [
-            test_transforms(image) for image in example_batch[args.image_column_name]
+            val_transforms(image) for image in example_batch[args.image_column_name]
         ]
         if args.use_segmentation:
             # Just convert mask to tensor
@@ -454,9 +454,9 @@ def main():
         # Set the training transforms
         train_dataset = dataset["train"].with_transform(preprocess_train) # type: ignore
         if args.max_eval_samples is not None:
-            dataset["test"] = dataset["test"].shuffle(seed=args.seed).select(range(args.max_eval_samples)) # type: ignore
-        # Set the test transforms
-        test_dataset = dataset["test"].with_transform(preprocess_test) # type: ignore
+            dataset["validation"] = dataset["validation"].shuffle(seed=args.seed).select(range(args.max_eval_samples)) # type: ignore
+        # Set the val transforms
+        val_dataset = dataset["validation"].with_transform(preprocess_val) # type: ignore
 
     # DataLoaders creation:
     def collate_fn(examples):
@@ -478,7 +478,7 @@ def main():
                                   collate_fn=collate_fn,
                                   batch_size=args.per_device_train_batch_size
     )
-    test_dataloader = DataLoader(test_dataset, # type: ignore
+    val_dataloader = DataLoader(val_dataset, # type: ignore
                                  collate_fn=collate_fn,
                                  batch_size=args.per_device_eval_batch_size)
 
@@ -505,8 +505,8 @@ def main():
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
         overrode_max_train_steps = True
 
-    model, optimizer, train_dataloader, test_dataloader = accelerator.prepare(
-        model, optimizer, train_dataloader, test_dataloader
+    model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
+        model, optimizer, train_dataloader, val_dataloader
     )
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
@@ -637,10 +637,10 @@ def main():
         model.eval()
         optimizer.eval()
         if args.with_tracking:
-            test_loss = 0
+            val_loss = 0
         # Reset specificity metric
         specificity_metric.reset()
-        for step, batch in enumerate(test_dataloader):
+        for step, batch in enumerate(val_dataloader):
             with torch.no_grad():
                 outputs = model(**batch)
             logits = outputs.logits
@@ -648,7 +648,7 @@ def main():
             loss = loss_fn(logits, labels)
             # We keep track of the loss at each epoch
             if args.with_tracking:
-                test_loss += loss.detach().float()
+                val_loss += loss.detach().float()
             predictions = logits.argmax(dim=-1)
             predictions, references = accelerator.gather_for_metrics((predictions, batch["labels"]))
             accuracy.add_batch(predictions=predictions, references=references)
@@ -675,7 +675,7 @@ def main():
                     "precision": eval_metric['precision'],
                     "sensitivity": eval_metric['recall'],
                     "train_loss": total_loss.item() / len(train_dataloader), # type: ignore
-                    "test_loss": test_loss.item() / len(test_dataloader), # type: ignore
+                    "val_loss": val_loss.item() / len(val_dataloader), # type: ignore
                     "epoch": epoch,
                     "step": completed_steps,
                 },
