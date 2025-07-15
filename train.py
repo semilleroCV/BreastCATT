@@ -240,6 +240,14 @@ def parse_args():
         help="The metric to use for saving the best model. If a metric is specified, the script will save the model checkpoint that achieves the best score on that metric.",
         choices=["accuracy", "precision", "recall", "specificity", "val_loss"],
     )
+    parser.add_argument(
+        "--save_best_only",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="If True, only saves the best and last model checkpoints, overwriting them as needed.",
+    )
     args = parser.parse_args()
 
     # Sanity checks
@@ -527,6 +535,13 @@ def main():
     progress_bar = tqdm(range(args.max_train_steps), disable=not accelerator.is_local_main_process)
     completed_steps = 0
     starting_epoch = 0
+
+    # Create a state dictionary to track progress and register it
+    progress_state = {
+        "completed_steps": completed_steps,
+        "epoch": starting_epoch,
+        "best_metric_value": best_metric_value,
+    }
     # Potentially load in the weights and states from a previous save
     if args.resume_from_checkpoint:
         if args.resume_from_checkpoint is not None or args.resume_from_checkpoint != "":
@@ -542,24 +557,45 @@ def main():
 
         accelerator.print(f"Resumed from checkpoint: {checkpoint_path}")
         accelerator.load_state(checkpoint_path)
+
+        # Load the progress state from json
+        progress_json_path = os.path.join(checkpoint_path, "progress.json")
+        if os.path.exists(progress_json_path):
+            with open(progress_json_path, "r") as f:
+                progress_state = json.load(f)
+
         # Extract `epoch_{i}` or `step_{i}`
         training_difference = os.path.splitext(path)[0]
 
-        if "epoch" in training_difference:
-            starting_epoch = int(training_difference.replace("epoch_", "")) + 1
-            resume_step = None
-            completed_steps = starting_epoch * num_update_steps_per_epoch
+        if "epoch" in training_difference or "step" in training_difference:
+            if "epoch" in training_difference:
+                starting_epoch = int(training_difference.replace("epoch_", "")) + 1
+                resume_step = None
+                completed_steps = starting_epoch * num_update_steps_per_epoch
+            else:
+                # need to multiply `gradient_accumulation_steps` to reflect real steps
+                resume_step = int(training_difference.replace("step_", "")) * args.gradient_accumulation_steps
+                starting_epoch = resume_step // len(train_dataloader)
+                completed_steps = resume_step // args.gradient_accumulation_steps
+                resume_step -= starting_epoch * len(train_dataloader)
         else:
-            # need to multiply `gradient_accumulation_steps` to reflect real steps
-            resume_step = int(training_difference.replace("step_", "")) * args.gradient_accumulation_steps
-            starting_epoch = resume_step // len(train_dataloader)
-            completed_steps = resume_step // args.gradient_accumulation_steps
-            resume_step -= starting_epoch * len(train_dataloader)
+            # We have loaded a checkpoint from a directory like `best_model` or `last_model`.
+            # The step and epoch were loaded automatically from the `progress.json`
+            completed_steps = progress_state["completed_steps"]
+            starting_epoch = progress_state["epoch"]
+            best_metric_value = progress_state["best_metric_value"]
+            resume_step = completed_steps % num_update_steps_per_epoch
+            logger.info(f"Resuming from epoch {starting_epoch} and step {completed_steps}")
 
     # update the progress_bar if load from checkpoint
     progress_bar.update(completed_steps)
 
     loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
+
+    # If we're resuming a training that has already completed, just exit.
+    if starting_epoch >= args.num_train_epochs:
+        logger.info("Training is already complete. Exiting.")
+        return
 
     for epoch in range(starting_epoch, args.num_train_epochs):
         model.train()
@@ -588,6 +624,8 @@ def main():
             if accelerator.sync_gradients:
                 progress_bar.update(1)
                 completed_steps += 1
+                progress_state["completed_steps"] = completed_steps
+
 
             # TODO: implement conditional checkpointing when checkpointing_steps is stated
             if isinstance(checkpointing_steps, int):
@@ -650,6 +688,8 @@ def main():
         if args.with_tracking:
             eval_metric["val_loss"] = val_loss.item() / len(val_dataloader) # type: ignore
         logger.info(f"epoch {epoch}: {eval_metric}")
+        progress_state["epoch"] = epoch + 1
+
 
         if args.with_tracking:
             accelerator.log(
@@ -700,15 +740,35 @@ def main():
                     if improvement:
                         logger.info(f"Metric '{args.metric_for_best_model}' improved from {best_metric_value:.4f} to {current_metric_value:.4f}.")
                         best_metric_value = current_metric_value
+                        progress_state["best_metric_value"] = best_metric_value
                         save_checkpoint = True
                     else:
                         logger.info(f"Metric '{args.metric_for_best_model}' did not improve from {best_metric_value:.4f}. Skipping checkpoint.")
 
-        if save_checkpoint:
-            output_dir = f"epoch_{epoch}"
-            if args.output_dir is not None:
-                output_dir = os.path.join(args.output_dir, output_dir)
-            accelerator.save_state(output_dir)
+        if args.checkpointing_steps == "epoch":
+            if args.save_best_only:
+                # Always save the last checkpoint to allow resuming
+                if args.output_dir is not None:
+                    last_checkpoint_dir = os.path.join(args.output_dir, "last_model")
+                    accelerator.save_state(last_checkpoint_dir)
+                    if accelerator.is_main_process:
+                        with open(os.path.join(last_checkpoint_dir, "progress.json"), "w") as f:
+                            json.dump(progress_state, f)
+                    logger.info(f"Saved last checkpoint to {last_checkpoint_dir}")
+
+                # Save the best checkpoint only if it has improved
+                if save_checkpoint and args.output_dir is not None:
+                    best_checkpoint_dir = os.path.join(args.output_dir, "best_model")
+                    accelerator.save_state(best_checkpoint_dir)
+                    if accelerator.is_main_process:
+                        with open(os.path.join(best_checkpoint_dir, "progress.json"), "w") as f:
+                            json.dump(progress_state, f)
+                    logger.info(f"Saved best model checkpoint to {best_checkpoint_dir}")
+            elif save_checkpoint: 
+                output_dir = f"epoch_{epoch}"
+                if args.output_dir is not None:
+                    output_dir = os.path.join(args.output_dir, output_dir)
+                accelerator.save_state(output_dir)
 
     if args.with_tracking:
         accelerator.end_training()
@@ -729,7 +789,6 @@ def main():
                     token=args.hub_token,
                 )
             all_results = {f"eval_{k}": v for k, v in eval_metric.items()}
-            all_results["eval_specificity"] = score_specificity.item()
             with open(os.path.join(args.output_dir, "all_results.json"), "w") as f:
                 json.dump(all_results, f)
 
