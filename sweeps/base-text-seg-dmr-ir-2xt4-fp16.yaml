@@ -1,7 +1,7 @@
 method: bayes
 metric:
-  goal: maximize
-  name: accuracy
+  goal: minimize
+  name: val_loss
 
 early_terminate:
   type: hyperband

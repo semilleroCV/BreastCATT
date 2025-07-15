@@ -1,7 +1,7 @@
 method: bayes
 metric:
   goal: minimize
-  name: test_loss
+  name: val_loss
 
 early_terminate:
   type: hyperband
