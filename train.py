@@ -340,7 +340,7 @@ def main():
         # See more about loading custom images at
         # https://huggingface.co/docs/datasets/v2.0.0/en/image_process#imagefolder.
 
-    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["validation"].column_names
+    dataset_column_names = dataset["train"].column_names if "train" in dataset else dataset["validation"].column_names # type: ignore
     if args.image_column_name not in dataset_column_names:
         raise ValueError(
             f"--image_column_name {args.image_column_name} not found in dataset '{args.dataset_name}'. "
@@ -356,10 +356,10 @@ def main():
 
     # Prepare label mappings.
     # We'll include these in the model's config to get human readable labels in the Inference API.
-    labels = dataset["train"].features[args.label_column_name].names
+    labels = dataset["train"].features[args.label_column_name].names # type: ignore
 
     # Compute class weights to manage inbalance in the dataset
-    all_labels = dataset["train"][args.label_column_name]
+    all_labels = dataset["train"][args.label_column_name] # type: ignore
     class_weights_np = compute_class_weight(class_weight="balanced", classes=np.unique(all_labels), y=all_labels)
     # we need to set dtype float16 to enable accelerate launching, or return to float32 on default python launch
     class_weights = torch.tensor(class_weights_np, dtype=torch.float16).to(accelerator.device)
@@ -498,7 +498,7 @@ def main():
     # Initialize for best model saving
     best_metric_value = 0.0
     metric_mode = "max"
-    if args.metric_for_best_model is not None:
+    if args.metric_for_best_model is not None and checkpointing_steps is not None:
         if args.metric_for_best_model == "val_loss":
             best_metric_value = float("inf")
             metric_mode = "min"
@@ -646,17 +646,20 @@ def main():
         }
         # Calculate specificity and use recall as sensitivity
         score_specificity = specificity_metric.compute()
-        logger.info(f"epoch {epoch}: {eval_metric}, specificity: {score_specificity}")
+        eval_metric["specificity"] = score_specificity.item()
+        if args.with_tracking:
+            eval_metric["val_loss"] = val_loss.item() / len(val_dataloader) # type: ignore
+        logger.info(f"epoch {epoch}: {eval_metric}")
 
         if args.with_tracking:
             accelerator.log(
                 {
-                    "specificity": score_specificity,
+                    "specificity": eval_metric["specificity"],
                     "accuracy": eval_metric['accuracy'],
                     "precision": eval_metric['precision'],
                     "sensitivity": eval_metric['recall'],
                     "train_loss": total_loss.item() / len(train_dataloader), # type: ignore
-                    "val_loss": val_loss.item() / len(val_dataloader), # type: ignore
+                    "val_loss": eval_metric["val_loss"],
                     "epoch": epoch,
                     "step": completed_steps,
                 },
