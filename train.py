@@ -334,7 +334,7 @@ def main():
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        config_name = "with_full_metadata" if args.dataset_name == "SemilleroCV/DMR-IR" else "with_embeddings_and_segmentation_per_view"
+        config_name = "with_full_clinical_metadata" if args.dataset_name == "SemilleroCV/DMR-IR" else "with_embeddings_and_segmentation_per_view"
         dataset = load_dataset(args.dataset_name,
                                name=config_name)
     else:
