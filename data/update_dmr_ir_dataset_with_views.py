@@ -1,7 +1,5 @@
 import argparse
-import os
 import pandas as pd
-import numpy as np
 from pathlib import Path
 from datasets import load_dataset, Dataset, DatasetDict, Features, ClassLabel, Value, Image as HFImage, Sequence
 from tqdm.auto import tqdm
@@ -15,7 +13,7 @@ def parse_args():
         "--metadata_csv_path",
         type=str,
         default="metadata_with_views.csv",
-        help="Path to the local metadata file that includes view and protocol splits."
+        help="Path to the local metadata file with the NEW prompts. Must be in the same order as the Hub dataset."
     )
     parser.add_argument(
         "--local_data_path",
@@ -49,52 +47,51 @@ def main():
 
     # 1. Load the base dataset from the Hub to get embeddings and segmentations
     print(f"Loading base dataset '{args.dataset_repo_id}' with config '{args.base_config_name}'...")
-    hub_dataset = load_dataset(args.dataset_repo_id, name=args.base_config_name, trust_remote_code=True)
+    hub_dataset = load_dataset(args.dataset_repo_id, name=args.base_config_name, split="all")
 
-    # 2. Create a lookup dictionary from the Hub dataset.
-    metadata_lookup = {}
-    for split in hub_dataset.keys():
-        for item in hub_dataset[split]: # type: ignore
-            metadata_lookup[item['text']] = { # type: ignore
-                "text_embedding": item["text_embedding"], # type: ignore
-                "segmentation_mask": item["segmentation_mask"], # type: ignore
-            }
-    print(f"Created metadata lookup with {len(metadata_lookup)} entries.")
+    # 2. Read the local metadata CSV with the NEW prompts
+    print(f"Reading local metadata with new prompts from '{args.metadata_csv_path}'...")
+    local_df = pd.read_csv(args.metadata_csv_path).fillna('')
 
-    # 3. Read the local ENRICHED metadata CSV
-    print(f"Reading local metadata from '{args.metadata_csv_path}'...")
-    local_df = pd.read_csv(args.metadata_csv_path).fillna('') # Use empty string for missing views/protocols
+    # 3. Verify that the datasets have the same length, as we rely on their order corresponding.
+    if len(hub_dataset) != len(local_df):
+        print(f"\nError: Mismatch in lengths. Hub dataset has {len(hub_dataset)} entries, "
+              f"but local CSV has {len(local_df)} entries.")
+        print("The script requires these to be identical and in the same order.")
+        return
 
-    # 4. Process the DataFrame to create new records and sort them into splits
+    # 4. Process the data, combining Hub data with new local metadata row-by-row
     train_records, val_records, test_records = [], [], []
-    print("Processing CSV, matching with Hub metadata, and assigning to splits...")
-    for _, row in tqdm(local_df.iterrows(), total=len(local_df)):
-        file_name = row['file_name']
-        text = row['text']
-        
-        hub_meta = metadata_lookup.get(text)
-        if hub_meta:
-            mask_array = np.array(hub_meta['segmentation_mask'])
-            if mask_array.ndim == 2:
-                mask_array = np.expand_dims(mask_array, axis=0)
-            
-            record = {
-                "image": str(data_root_path / file_name),
-                "label": row['label'],
-                "text": text,
-                "patient_id": row['patient_id'],
-                "text_embedding": hub_meta["text_embedding"],
-                "segmentation_mask": mask_array.tolist(),
-                "protocol": row['protocol'], # Add new field
-                "view": row['view'],         # Add new field
-            }
+    print("Processing data, assuming a 1-to-1 correspondence in order...")
+    
+    # Convert DataFrame to a list of dictionaries for faster access
+    local_records = local_df.to_dict('records')
 
-            if row['split'] == 'train':
-                train_records.append(record)
-            elif row['split'] == 'validation':
-                val_records.append(record)
-            else: # 'test'
-                test_records.append(record)
+    for i, hub_item in enumerate(tqdm(hub_dataset)):
+        local_row = local_records[i]
+        
+        file_name = local_row['file_name']
+        
+        # The segmentation mask from the hub is already a list of lists.
+        mask_list = hub_item['segmentation_mask']
+        
+        record = {
+            "image": str(data_root_path / file_name),
+            "label": local_row['label'],
+            "text": local_row['text'],  # Using the NEW text from the local file
+            "patient_id": local_row['patient_id'],
+            "text_embedding": hub_item["text_embedding"],
+            "segmentation_mask": mask_list,
+            "protocol": local_row['protocol'],
+            "view": local_row['view'],
+        }
+
+        if local_row['split'] == 'train':
+            train_records.append(record)
+        elif local_row['split'] == 'validation':
+            val_records.append(record)
+        else: # 'test'
+            test_records.append(record)
 
     # 5. Define the features for the new dataset (WITH new columns)
     features = Features({
@@ -108,12 +105,20 @@ def main():
         'view': ClassLabel(names=['Frontal', 'Right 45°', 'Right 90°', 'Left 45°', 'Left 90°', 'Unknown']),
     })
 
-    # 6. Create the final DatasetDict
-    final_dataset = DatasetDict({
-        "train": Dataset.from_list(train_records, features=features),
-        "validation": Dataset.from_list(val_records, features=features),
-        "test": Dataset.from_list(test_records, features=features),
-    })
+    # 6. Create the final DatasetDict, only including non-empty splits
+    final_dataset_dict = {}
+    if train_records:
+        final_dataset_dict["train"] = Dataset.from_list(train_records, features=features)
+    if val_records:
+        final_dataset_dict["validation"] = Dataset.from_list(val_records, features=features)
+    if test_records:
+        final_dataset_dict["test"] = Dataset.from_list(test_records, features=features)
+
+    if not final_dataset_dict:
+        print("\nError: No records were created. Check if the 'file_name' column in your CSV matches the filenames in the base dataset.")
+        return
+
+    final_dataset = DatasetDict(final_dataset_dict)
 
     print("\nNew dataset structure created:")
     print(final_dataset)
