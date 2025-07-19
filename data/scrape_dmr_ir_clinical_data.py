@@ -499,7 +499,12 @@ def scrape_patient_data(session, patient_id, base_url, retries=3):
                     match = re.search(r'(\w+), (\d+) years old', age_text_p.get_text(strip=True))
                     if match:
                         data['role'] = match.group(1)
-                        data['age_current'] = int(match.group(2))
+                        age = int(match.group(2))
+                        # Add age validation to skip unrealistic entries
+                        if age > 100:
+                            print(f"  -> WARNING: Patient {patient_id} has an unlikely age ({age}). Skipping patient.")
+                            return None
+                        data['age_current'] = age
 
                 reg_date_p = perfil.find('p', string=re.compile(r'Registered at'))
                 if reg_date_p:
@@ -559,6 +564,20 @@ def scrape_patient_data(session, patient_id, base_url, retries=3):
                                 data[key] = value
             
             # --- 4. Post-parsing verification and cleaning ---
+            # Clear last menstrual period if patient is older and LMP is a recent date (data error)
+            try:
+                age_at_visit = data.get('age_at_visit')
+                lmp_val = data.get('last_menstrual_period')
+
+                # Check if age is high and LMP is a date string (e.g., 'YYYY-MM-DD')
+                if age_at_visit and lmp_val and isinstance(lmp_val, str) and re.match(r'\d{4}-\d{2}-\d{2}', lmp_val):
+                    if int(age_at_visit) > 60: # Threshold for menopause
+                        patient_id = data.get('patient_id', 'Unknown')
+                        print(f"  -> INFO: Patient {patient_id} (age {age_at_visit}) has a recent LMP date ({lmp_val}). Clearing field due to likely data error.")
+                        data['last_menstrual_period'] = None
+            except (ValueError, TypeError):
+                pass # Ignore if values are not comparable
+
             # Swap Last Menstrual Period and Menopause if they seem inverted
             try:
                 lmp_val = data.get('last_menstrual_period')
