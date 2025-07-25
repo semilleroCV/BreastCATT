@@ -32,3 +32,18 @@ transformers/
 thermal_parser/
 runs
 wandb
+
+# Ignore everything under data/
+data/*
+
+# But don't ignore DMR-IR/ and BreastThermography/ folders themselves
+!data/DMR-IR/
+!data/BreastThermography/
+
+# Ignore everything inside those folders
+data/DMR-IR/*
+data/BreastThermography/*
+
+# Except the csv files in those folders
+!data/DMR-IR/*.csv
+!data/BreastThermography/*.csv
