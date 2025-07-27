@@ -32,6 +32,7 @@ transformers/
 thermal_parser/
 runs
 wandb
+utils
 
 # Ignore everything under data/
 data/*
