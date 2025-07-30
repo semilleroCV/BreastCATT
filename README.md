@@ -20,16 +20,6 @@ Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 
 <p align="center"> <img src="assets/figures/framework.png" alt="breastcatt architecture" height='400'> </p>
 
-## Key Features
-
-- 🔥 **Vision-Language Integration**: Combines thermal imaging with structured clinical metadata through descriptive text prompts
-- 🎯 **Cross-Attention Fusion**: Advanced fusion of image tokens and text embeddings via cross-attention blocks
-- 📐 **Viewing Angle Agnostic**: Robust classification performance irrespective of thermal image viewing angle
-- 🩺 **Clinical Metadata Integration**: Leverages patient-specific variables (age, symptoms, medical history) for enhanced accuracy
-- 📊 **Multi-Dataset Validation**: Demonstrated performance on DMR-IR and Breast Thermography datasets
-- 🔄 **Transfer Learning**: Built on pre-trained vision transformers with domain adaptation
-- 📈 **Superior Sensitivity**: Outperforms state-of-the-art visual-only and multimodal baselines
-
 ## Dataset
 
 Our experiments utilize two thermal imaging datasets for comprehensive evaluation:
