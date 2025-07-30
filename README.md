@@ -33,7 +33,7 @@ Dataset of thermography images of area of the female torax with information of t
 
 ## Architecture
 
-BreastCATT implements a sophisticated multimodal vision transformer with the following components:
+Our paper implements a multimodal vision-language transformer with the following components:
 
 - **Vision Encoder**: ViT implementation with configurable depths and attention heads
 - **Language Model**: GatorTron-based text processing for multimodal fusion
