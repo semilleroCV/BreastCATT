@@ -25,10 +25,10 @@ Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 Our experiments utilize two thermal imaging datasets for comprehensive evaluation:
 
 ### DMR-IR Dataset
-The DMR-IR (Database for Research Mastology with Infrared Image) dataset contains thermal images for breast cancer detection. This dataset includes structured clinical metadata (patient age, symptoms, medical history) which is converted into descriptive text prompts for multimodal fusion. Original dataset was obtained from [Departamento de Ciência da Computação Universidade Federal Fluminense](https://visual.ic.uff.br/dmi/) and our version is available [here](https://huggingface.co/datasets/SemilleroCV/DMR-IR) (this work used this revision `69ffd6240b4a50bc4a05c59b70773f3a506054f2` of the dataset).
+The DMR-IR (Database for Research Mastology with Infrared Image) dataset contains thermal images for breast cancer detection. This dataset includes structured clinical metadata (patient age, symptoms, medical history) which is converted into descriptive text prompts for multimodal fusion. Original dataset was obtained from [Departamento de Ciência da Computação Universidade Federal Fluminense](https://visual.ic.uff.br/dmi/) and our version of that dataset can be found on Hugging Face [here](https://huggingface.co/datasets/SemilleroCV/DMR-IR) (this work uses revision `69ffd6240b4a50bc4a05c59b70773f3a506054f2` of the dataset).
 
 ### Breast Thermography Dataset
-Dataset of thermography images of area of the female torax with information of the results of pathology studies. The pictures were taken in a doctor's office at the Hospital San Juan de Dios - Sede Cali. This dataset is available [here](https://data.mendeley.com/datasets/mhrt4svjxc/3) and our version [here](https://huggingface.co/datasets/SemilleroCV/BreastThermography) (this work used this revision `6a84021f2a5b253d0da72f7948de93613fd9a788` of the dataset)
+Dataset of thermography images of area of the female torax with information of the results of pathology studies. The pictures were taken in a doctor's office at the Hospital San Juan de Dios - Sede Cali. Original dataset is available [here](https://data.mendeley.com/datasets/mhrt4svjxc/3); and our version of that dataset can be found on Hugging Face [here](https://huggingface.co/datasets/SemilleroCV/BreastThermography) (this work uses revision `6a84021f2a5b253d0da72f7948de93613fd9a788` of the dataset).
 
 
 ## Architecture
