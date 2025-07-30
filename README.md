@@ -3,14 +3,14 @@
 # Multimodal Vision-Language Transformer for Thermography Breast Cancer Classification
 
 <a href="#">
-  <img src="assets/figures/ColCACI-2025.png" alt="BreastCATT" style="max-width: 100%; height: 300px;">
+  <img src="assets/figures/ColCACI-2025.png" alt="breastcatt" style="max-width: 100%; height: 300px;">
 </a>
 
 [Guillermo Pinto](https://guillepinto.github.io/), [Julián León](https://www.linkedin.com/in/nobodys-stache/), [Brayan Quintero](https://github.com/BrayanQuintero123), [Dana Villamizar](https://github.com/DanaVillamizar) and [Hoover Rueda-Chacón](hfarueda.com)
 
 Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 
-### [Paper](assets/docs/paper.pdf) | [Checkpoints](https://huggingface.co/SemilleroCV)
+### [TODO-Paper]() | [Checkpoints](https://github.com/semilleroCV/breastcatt-commit-97752a8?tab=readme-ov-file#checkpoints)
 
 > **Abstract:** We propose a multimodal vision-language transformer designed to classify breast cancer from a single thermal image, irrespective of viewing angle, by integrating thermal features with structured clinical metadata. Our framework generates descriptive text prompts from patient-specific variables, which are embedded and jointly fused with image tokens via crossattention blocks. Extensive experiments on the DMR-IR and Breast Thermography datasets demonstrate that our method achieves 97.5% accuracy on DMR-IR and 83.7% on Breast Thermography, surpassing state-of-the-art multimodal and visual-only baselines in sensitivity. By combining clinical cues, our approach offers a flexible, robust, and interpretable solution for early breast cancer detection with potential for clinical translation in diverse healthcare scenarios.
 
@@ -18,7 +18,7 @@ Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 
 </br>
 
-<p align="center"> <img src="assets/figures/framework.png" alt="BreastCATT Architecture" height='400'> </p>
+<p align="center"> <img src="assets/figures/framework.png" alt="breastcatt architecture" height='400'> </p>
 
 ## Key Features
 
@@ -35,23 +35,23 @@ Research Group: [Hands-on Computer Vision](https://semillerocv.github.io/)
 Our experiments utilize two thermal imaging datasets for comprehensive evaluation:
 
 ### DMR-IR Dataset
-The DMR-IR (Database for Research Mastology with Infrared Image) dataset contains thermal images for breast cancer detection. This dataset includes structured clinical metadata (patient age, symptoms, medical history) which is converted into descriptive text prompts for multimodal fusion. Original dataset was obtained from [Departamento de Ciência da Computação Universidade Federal Fluminense](https://visual.ic.uff.br/dmi/) and our version is available [here](https://huggingface.co/datasets/SemilleroCV/DMR-IR)
+The DMR-IR (Database for Research Mastology with Infrared Image) dataset contains thermal images for breast cancer detection. This dataset includes structured clinical metadata (patient age, symptoms, medical history) which is converted into descriptive text prompts for multimodal fusion. Original dataset was obtained from [Departamento de Ciência da Computação Universidade Federal Fluminense](https://visual.ic.uff.br/dmi/) and our version is available [here](https://huggingface.co/datasets/SemilleroCV/DMR-IR) (this work used this revision `69ffd6240b4a50bc4a05c59b70773f3a506054f2` of the dataset).
 
 ### Breast Thermography Dataset
-Additional validation dataset containing thermal breast images with diverse viewing angles and patient demographics, enabling robust evaluation of model generalization capabilities. This dataset is available [here](https://huggingface.co/datasets/SemilleroCV/BreastThermography)
+Dataset of thermography images of area of the female torax with information of the results of pathology studies. The pictures were taken in a doctor's office at the Hospital San Juan de Dios - Sede Cali. This dataset is available [here](https://data.mendeley.com/datasets/mhrt4svjxc/3) and our version [here](https://huggingface.co/datasets/SemilleroCV/BreastThermography) (this work used this revision `6a84021f2a5b253d0da72f7948de93613fd9a788` of the dataset)
 
 
 ## Architecture
 
 BreastCATT implements a sophisticated multimodal vision transformer with the following components:
 
-- **Vision Encoder**: Custom ViT implementation with configurable depths and attention heads
+- **Vision Encoder**: ViT implementation with configurable depths and attention heads
 - **Language Model**: GatorTron-based text processing for multimodal fusion
 - **Cross-Attention**: Facilitates interaction between visual and textual features
 - **Segmentation Module**: Optional segmentation branch for spatial analysis
 - **Fusion Layer**: Alpha-weighted combination of modalities
 
-<p align="center"> <img src="assets/figures/architecture.png" alt="BreastCATT Architecture" height='400'> </p>
+<p align="center"> <img src="assets/figures/architecture.png" alt="breastcatt architecture" height='400'> </p>
 
 ## Installation
 
@@ -65,8 +65,8 @@ BreastCATT implements a sophisticated multimodal vision transformer with the fol
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/semilleroCV/BreastCATT.git
-cd BreastCATT
+git clone https://github.com/semilleroCV/breastcatt.git
+cd breastcatt
 ```
 
 2. Create and activate a conda environment:
@@ -89,7 +89,7 @@ pip install -r requirements.txt
 
 ### Training from Scratch
 
-Train a custom BreastCATT model:
+Train a custom breastcatt model:
 
 ```bash
 python train.py \
@@ -108,8 +108,8 @@ Fine-tune from HuggingFace Hub models:
 
 ```bash
 python train.py \
-    --vit_version "best" \
-    --model_name_or_path "SemilleroCV/tfvit-base_text" \
+    --vit_version "pretrained" \
+    --model_name_or_path "SemilleroCV/tfvit-base-text-2" \
     --dataset_name "SemilleroCV/DMR-IR" \
     --num_train_epochs 5 \
     --learning_rate 2e-5
@@ -144,19 +144,8 @@ Key parameters for customization:
 - `--use_cross_attn`: Enable cross-attention between modalities
 - `--use_segmentation`: Include segmentation head
 - `--alpha`: Fusion weight for multimodal combination
-- `--vit_version`: Model size (small/base/large/huge/best)
+- `--vit_version`: Model size (small/base/large/pretrained)
 - `--checkpointing_steps`: Save frequency for model checkpoints
-
-## Evaluation
-
-### Metrics
-
-We evaluate models using comprehensive metrics:
-
-- **Accuracy**: Overall classification accuracy
-- **Precision**: Positive predictive value
-- **Recall (Sensitivity)**: True positive rate
-- **Specificity**: True negative rate
 
 ## Results
 
@@ -187,40 +176,30 @@ Classification results on Breast Thermography dataset:
 
 ### Key Findings
 
-- **State-of-the-art Performance**: Achieved 97.5% accuracy on DMR-IR dataset, surpassing previous multimodal methods
 - **Superior Sensitivity**: Best sensitivity (96.6%) on DMR-IR among all compared methods
 - **Multimodal Advantage**: Integration of clinical metadata with thermal imaging significantly improves performance
 - **Transfer Learning Benefits**: Pre-training and fine-tuning approach shows improved sensitivity on Breast Thermography dataset
-- **Robustness**: Consistent performance across different datasets and patient demographics
 
 ## Checkpoints
 
 Pre-trained models are available on HuggingFace Hub:
 
-- [BreastCATT-Base](https://huggingface.co/SemilleroCV/tfvit-base)
-- [BreastCATT-Base (text)](https://huggingface.co/SemilleroCV/tfvit-base_text)
-- [BreastCATT-Base (text and seg)](https://huggingface.co/SemilleroCV/tfvit-base_seg_text)
+- [breastcatt-base-text](https://huggingface.co/SemilleroCV/tfvit-base-text-2)
 
 ## Notebooks
 
 Explore our analysis and experiments:
 
-- [`modeling.ipynb`](notebooks/modeling.ipynb): Model architecture exploration
-- [`trainer.ipynb`](notebooks/trainer.ipynb): Training pipeline demonstration
-- [`segmentation.ipynb`](notebooks/segmentation.ipynb): Segmentation analysis
-- [`multi-prompt-probe.ipynb`](notebooks/prompt-linear-probing.ipynb): Prompt linear probing
+- [`demo.ipynb`](notebooks/demo.ipynb): Simple demonstration of our model
+- [`segmentation-outputs.ipynb`](notebooks/segmentation-outputs.ipynb): Segmentation analysis
+- [`prompt-linear-probing.ipynb`](notebooks/prompt-linear-probing.ipynb): Prompt linear probing
 
 ## Citation
 
 If you find our work useful in your research, please cite:
 
 ```bibtex
-@article{pinto2025multimodal,
-  title={Multimodal Vision-Language Transformer for Thermography Breast Cancer Classification},
-  author={Pinto, Guillermo and León, Julián and Quintero, Brayan and Villamizar, Dana and Rueda-Chacón, Hoover},
-  journal={xxxxx},
-  year={2025}
-}
+TODO
 ```
 
 ## Acknowledgements
