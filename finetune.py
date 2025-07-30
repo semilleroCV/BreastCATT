@@ -310,7 +310,14 @@ def main():
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(args.dataset_name, trust_remote_code=args.trust_remote_code)
+        if args.dataset_name == 'SemilleroCV/DMR-IR':
+            revision = '69ffd6240b4a50bc4a05c59b70773f3a506054f2' 
+        elif args.dataset_name == "SemilleroCV/BreastThermography":
+            revision = '6a84021f2a5b253d0da72f7948de93613fd9a788'
+        else:
+            revision = None
+            
+        dataset = load_dataset(args.dataset_name, revision=revision)
     else:
         data_files = {}
         if args.train_dir is not None:
