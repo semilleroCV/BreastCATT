@@ -8,7 +8,7 @@ import os
 import subprocess
 
 # Add the project root to Python path
-sys.path.insert(0, '/home/guillermo/ssd/Github/BreastCATT')
+sys.path.append(os.path.abspath("../"))
 
 def test_train_with_automatic_download():
     """Test that train.py works with automatic MAE download."""
@@ -40,7 +40,6 @@ def test_train_with_automatic_download():
             capture_output=True, 
             text=True, 
             timeout=300,  # 5 minute timeout
-            cwd='/home/guillermo/ssd/Github/BreastCATT'
         )
         
         print(f"Return code: {result.returncode}")

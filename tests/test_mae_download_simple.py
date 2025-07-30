@@ -8,7 +8,7 @@ import os
 import urllib.request
 
 # Add the project root to Python path
-sys.path.insert(0, '/home/guillermo/ssd/Github/BreastCATT')
+sys.path.append(os.path.abspath("../"))
 
 def download_mae_weights(model_size="base", force_download=False):
     """

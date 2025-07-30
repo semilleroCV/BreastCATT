@@ -8,7 +8,7 @@ import os
 import torch
 
 # Add the project root to Python path
-sys.path.insert(0, '/home/guillermo/ssd/Github/BreastCATT')
+sys.path.append(os.path.abspath("../"))
 
 def test_integrated_mae_functionality():
     """Test the integrated MAE weights download and model creation."""
